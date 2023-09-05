@@ -8,7 +8,7 @@ RFLAG		= -r
 
 OBJ_DIR		= obj
 
-SRCS		= test.cpp
+SRCS		= main.cpp
 
 OBJ			= $(SRCS:.cpp=.o)
 OBJS		= $(addprefix $(OBJ_DIR)/, $(OBJ))
