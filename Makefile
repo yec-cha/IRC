@@ -2,18 +2,19 @@
 
 NAME		= ircserv
 
-CXXFLAGS	= -Wall -Wextra -Werror -std=c++98
+# CXXFLAGS	= -Wall -Wextra -Werror -std=c++98
+CXXFLAGS	= -Wall -Wextra -Werror -std=c++11
 RFLAG		= -r
 
 OBJ_DIR		= obj
 
-SRCS		= main.cpp
+SRCS		= test.cpp
 
 OBJ			= $(SRCS:.cpp=.o)
 OBJS		= $(addprefix $(OBJ_DIR)/, $(OBJ))
 
 $(NAME): $(OBJS)
-	$(CXX) $(CXXFLAGS) $^ -o $@ 
+	$(CXX) $(CXXFLAGS) $^ -o $@
 
 $(OBJ_DIR)/%.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
