@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include <poll.h>
 
-const int SERVER_PORT = 6671;
+const int SERVER_PORT = 6680;
 const int MAX_CONNECTIONS = 10;
 
 // // 예제에서 사용할 Capability 목록
@@ -101,49 +101,6 @@ private:
 };
 
 class IRCServer {
-public:
-    IRCServer() {
-        // 서버 초기화
-        serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-        if (serverSocket == -1) {
-            std::cerr << "Error: Unable to create server socket." << std::endl;
-            exit(1);
-        }
-
-        // 서버 주소 설정
-        serverAddress.sin_family = AF_INET;
-        serverAddress.sin_port = htons(SERVER_PORT);
-        serverAddress.sin_addr.s_addr = INADDR_ANY;
-
-        // 서버 바인딩
-        if (bind(serverSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1) {
-            std::cerr << "Error: Binding failed." << std::endl;
-            exit(1);
-        }
-
-        // 서버 리스닝
-        if (listen(serverSocket, MAX_CONNECTIONS) == -1) {
-            std::cerr << "Error: Listening failed." << std::endl;
-            exit(1);
-        }
-
-        std::cout << "IRC Server started on port " << SERVER_PORT << std::endl;
-    }
-
-    void acceptConnections() {
-        while (true) {
-            int clientLen = sizeof(clientAddr);
-            int clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, (socklen_t *)&clientLen);
-            if (clientSocket == -1) {
-                std::cerr << "Error: Unable to accept client connection." << std::endl;
-                continue;
-            }
-
-            // 클라이언트와 통신 시작
-            handleClient(clientSocket);
-        }
-    }
-
 private:
     int serverSocket;
     struct sockaddr_in serverAddress, clientAddr;
@@ -252,14 +209,25 @@ private:
                 // 수신한 데이터 처리
                 std::cout << "Received message: " << receivedMessage << std::endl;
                 
-                std::size_t found = receivedMessage.find("CAP LS");
-                if (found!=std::string::npos) {
-                    std::cout << "We find CAP LS" << std::endl;
+                //std::size_t found = receivedMessage.find("CAP LS");
+                //if (found!=std::string::npos) {
+                //    std::cout << "We find CAP LS" << std::endl;
                     
-                    std::string response = "CAP LS\n";
+                //    std::string response = "CAP LS\n";
+                //    send(clientSocket, response.c_str(), response.length(), 0);
+                //}
+				if (receivedMessage == "JOIN :\n")
+				{
+					std::cout << "join\n";
+					std::string response = "461";
                     send(clientSocket, response.c_str(), response.length(), 0);
-                }
-
+				}
+				if (receivedMessage == "JOIN :")
+				{
+					std::cout << "join2\n";
+					 std::string response = "461";
+                    send(clientSocket, response.c_str(), response.length(), 0);
+				}
                 // 예시: "HI" 명령어를 처리
                 if (receivedMessage == "HI\n") {
                     std::string response = "Hello, Client!\n";
@@ -273,6 +241,48 @@ private:
 
         // 연결이 종료되었음을 알림
         std::cout << "Client disconnected." << std::endl;
+    }
+public:
+    IRCServer() {
+        // 서버 초기화
+        serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+        if (serverSocket == -1) {
+            std::cerr << "Error: Unable to create server socket." << std::endl;
+            exit(1);
+        }
+
+        // 서버 주소 설정
+        serverAddress.sin_family = AF_INET;
+        serverAddress.sin_port = htons(SERVER_PORT);
+        serverAddress.sin_addr.s_addr = INADDR_ANY;
+
+        // 서버 바인딩
+        if (bind(serverSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1) {
+            std::cerr << "Error: Binding failed." << std::endl;
+            exit(1);
+        }
+
+        // 서버 리스닝
+        if (listen(serverSocket, MAX_CONNECTIONS) == -1) {
+            std::cerr << "Error: Listening failed." << std::endl;
+            exit(1);
+        }
+
+        std::cout << "IRC Server started on port " << SERVER_PORT << std::endl;
+    }
+
+    void acceptConnections() {
+        while (true) {
+            int clientLen = sizeof(clientAddr);
+            int clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, (socklen_t *)&clientLen);
+            if (clientSocket == -1) {
+                std::cerr << "Error: Unable to accept client connection." << std::endl;
+                continue;
+            }
+
+            // 클라이언트와 통신 시작
+            handleClient(clientSocket);
+        }
     }
 };
 
