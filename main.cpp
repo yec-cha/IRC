@@ -254,11 +254,14 @@ public:
 
             for (size_t i = 1; i < MAX_CONNECTIONS; i++)
             {
-                if (pollfds[i].revents & POLLIN) {
+                if (pollfds[i].fd > 0 && pollfds[i].revents & POLLIN)
+                {
                 // 클라이언트로부터 데이터 수신
                 ssize_t bytesRead = recv(pollfds[i].fd, buffer, sizeof(buffer), 0);
                 if (bytesRead <= 0) {
-                    // 클라이언트 연결 종료 또는 오류 발생
+                    close(pollfds[i].fd);
+                    pollfds[i].fd = -1;
+                    std::cout << i << ": Client disconnected." << std::endl;
                     break;
                 }
 
@@ -282,19 +285,13 @@ public:
 					std::string response = "461";
                     send(clientSocket, response.c_str(), response.length(), 0);
 				}
-				if (receivedMessage == "JOIN :")
-				{
-					std::cout << "join2\n";
-					 std::string response = "461";
-                    send(clientSocket, response.c_str(), response.length(), 0);
-				}
                 // 예시: "HI" 명령어를 처리
                 if (receivedMessage == "HI\n") {
                     std::string response = "Hello, Client!\n";
                     send(clientSocket, response.c_str(), response.length(), 0);
                 }
-            }
-                if (pollfds[i].revents & POLLHUP)
+                }
+                if (pollfds[i].revents & (POLLHUP | POLLERR))
                 {
                     close(pollfds[i].fd) ;
                     std::cout << pollfds[i].fd << ": Client disconnected." << std::endl;
