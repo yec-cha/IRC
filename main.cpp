@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include <poll.h>
 
-const int SERVER_PORT = 6680;
+const int SERVER_PORT = 6671;
 const int MAX_CONNECTIONS = 10;
 
 // // 예제에서 사용할 Capability 목록
@@ -56,6 +56,10 @@ const int MAX_CONNECTIONS = 10;
 // }
 
 class User {
+private:
+    int socket;
+    std::string nickname;
+
 public:
     User(int socket, const std::string& nickname) : socket(socket), nickname(nickname) {}
 
@@ -66,10 +70,6 @@ public:
     std::string getNickname() const {
         return nickname;
     }
-
-private:
-    int socket;
-    std::string nickname;
 };
 
 class Channel {
@@ -100,12 +100,16 @@ private:
     std::vector<User> users;
 };
 
+
+
 class IRCServer {
 private:
     int serverSocket;
     struct sockaddr_in serverAddress, clientAddr;
     std::vector<User> users;
     std::vector<Channel> channels;
+    struct pollfd pollfds[MAX_CONNECTIONS];
+    char buffer[1024];
 
     // 사용자 추가
     void addUser(int clientSocket, const std::string& nickname) {
@@ -173,74 +177,17 @@ private:
 
     void handleClient(int clientSocket) {
         // 클라이언트와 연결되었음을 알림
-        std::cout << "Client connected." << std::endl;
 
-        // 클라이언트와 통신을 처리하는 코드를 작성
-        char buffer[1024];
-        while (true) {
-            // poll 구조체 초기화
-            struct pollfd pollfds[1];
-            pollfds[0].fd = clientSocket;
-            pollfds[0].events = POLLIN;
-
-            // int pollResult = poll(pollfds, 1, -1); // 무제한 대기
-            int pollResult = poll(pollfds, 100, 500); // 무제한 대기
-
-            if (pollResult == -1) {
-                // 오류 처리
-                std::cerr << "Error in poll." << std::endl;
-                break;
-            } else if (pollResult == 0) {
-                // 타임아웃 처리
-                continue;
-            }
-
-            if (pollfds[0].revents & POLLIN) {
-                // 클라이언트로부터 데이터 수신
-                ssize_t bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
-                if (bytesRead <= 0) {
-                    // 클라이언트 연결 종료 또는 오류 발생
-                    break;
-                }
-
-                // 수신한 데이터를 문자열로 변환
-                std::string receivedMessage(buffer, bytesRead);
-
-                // 수신한 데이터 처리
-                std::cout << "Received message: " << receivedMessage << std::endl;
-                
-                //std::size_t found = receivedMessage.find("CAP LS");
-                //if (found!=std::string::npos) {
-                //    std::cout << "We find CAP LS" << std::endl;
-                    
-                //    std::string response = "CAP LS\n";
-                //    send(clientSocket, response.c_str(), response.length(), 0);
-                //}
-				if (receivedMessage == "JOIN :\n")
-				{
-					std::cout << "join\n";
-					std::string response = "461";
-                    send(clientSocket, response.c_str(), response.length(), 0);
-				}
-				if (receivedMessage == "JOIN :")
-				{
-					std::cout << "join2\n";
-					 std::string response = "461";
-                    send(clientSocket, response.c_str(), response.length(), 0);
-				}
-                // 예시: "HI" 명령어를 처리
-                if (receivedMessage == "HI\n") {
-                    std::string response = "Hello, Client!\n";
-                    send(clientSocket, response.c_str(), response.length(), 0);
-                }
+        for (size_t i = 1; i < MAX_CONNECTIONS; i++)
+        {
+            if (pollfds[i].fd == -1)
+            {
+                pollfds[i].fd = clientSocket;
+                pollfds[i].events = POLLIN;
+                std::cout << i << " : Client connected." << std::endl;
+                break ; 
             }
         }
-
-        // 클라이언트와의 통신이 끝나면 연결 종료
-        close(clientSocket);
-
-        // 연결이 종료되었음을 알림
-        std::cout << "Client disconnected." << std::endl;
     }
 public:
     IRCServer() {
@@ -268,20 +215,93 @@ public:
             exit(1);
         }
 
+        pollfds[0].fd = serverSocket;
+        pollfds[0].events = POLLIN;
+
+        for (size_t i = 1; i < MAX_CONNECTIONS; i++)
+        {
+            pollfds[i].fd = -1;
+        }
+        
         std::cout << "IRC Server started on port " << SERVER_PORT << std::endl;
     }
 
     void acceptConnections() {
+        int clientLen = sizeof(clientAddr);
+        int clientSocket;
+        int pollResult;
+
         while (true) {
-            int clientLen = sizeof(clientAddr);
-            int clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, (socklen_t *)&clientLen);
-            if (clientSocket == -1) {
-                std::cerr << "Error: Unable to accept client connection." << std::endl;
+            pollResult = poll(pollfds, MAX_CONNECTIONS, -1);
+            if (pollResult == -1) {
+                // 오류 처리
+                std::cerr << "Error in poll." << std::endl;
+                break;
+            } else if (pollResult == 0) {
+                // 타임아웃 처리
                 continue;
             }
+            
+            if (pollfds[0].revents & POLLIN)
+            {
+                clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, (socklen_t *)&clientLen);
+                if (clientSocket == -1) {
+                    std::cerr << "Error: Unable to accept client connection." << std::endl;
+                    continue;
+                }
+                handleClient(clientSocket);
+            }
 
-            // 클라이언트와 통신 시작
-            handleClient(clientSocket);
+            for (size_t i = 1; i < MAX_CONNECTIONS; i++)
+            {
+                if (pollfds[i].revents & POLLIN) {
+                // 클라이언트로부터 데이터 수신
+                ssize_t bytesRead = recv(pollfds[i].fd, buffer, sizeof(buffer), 0);
+                if (bytesRead <= 0) {
+                    // 클라이언트 연결 종료 또는 오류 발생
+                    break;
+                }
+
+
+                // 수신한 데이터를 문자열로 변환
+                std::string receivedMessage(buffer, bytesRead);
+
+                // 수신한 데이터 처리
+                std::cout << i << " client Received message: " << receivedMessage << std::endl;
+                
+                //std::size_t found = receivedMessage.find("CAP LS");
+                //if (found!=std::string::npos) {
+                //    std::cout << "We find CAP LS" << std::endl;
+                    
+                //    std::string response = "CAP LS\n";
+                //    send(clientSocket, response.c_str(), response.length(), 0);
+                //}
+				if (receivedMessage == "JOIN :\n")
+				{
+					std::cout << "join\n";
+					std::string response = "461";
+                    send(clientSocket, response.c_str(), response.length(), 0);
+				}
+				if (receivedMessage == "JOIN :")
+				{
+					std::cout << "join2\n";
+					 std::string response = "461";
+                    send(clientSocket, response.c_str(), response.length(), 0);
+				}
+                // 예시: "HI" 명령어를 처리
+                if (receivedMessage == "HI\n") {
+                    std::string response = "Hello, Client!\n";
+                    send(clientSocket, response.c_str(), response.length(), 0);
+                }
+            }
+                if (pollfds[i].revents & POLLHUP)
+                {
+                    close(pollfds[i].fd) ;
+                    std::cout << pollfds[i].fd << ": Client disconnected." << std::endl;
+                }
+            }
+            
+            
         }
     }
 };
