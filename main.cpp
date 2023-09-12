@@ -108,8 +108,9 @@ private:
     struct sockaddr_in serverAddress, clientAddr;
     std::vector<User> users;
     std::vector<Channel> channels;
-    struct pollfd pollfds[MAX_CONNECTIONS];
-    char buffer[1024];
+    // struct pollfd pollfds[MAX_CONNECTIONS];
+    std::vector<struct pollfd> pollfds;
+    char buffer[532];
 
     // 사용자 추가
     void addUser(int clientSocket, const std::string& nickname) {
@@ -178,16 +179,19 @@ private:
     void handleClient(int clientSocket) {
         // 클라이언트와 연결되었음을 알림
 
-        for (size_t i = 1; i < MAX_CONNECTIONS; i++)
-        {
-            if (pollfds[i].fd == -1)
-            {
-                pollfds[i].fd = clientSocket;
-                pollfds[i].events = POLLIN;
-                std::cout << i << " : Client connected." << std::endl;
-                break ; 
-            }
-        }
+        // for (size_t i = 1; i < MAX_CONNECTIONS; i++)
+        // {
+        //     if (pollfds[i].fd == -1)
+        //     {
+                struct pollfd tmp;
+                tmp.fd = clientSocket;
+                tmp.events = POLLIN;
+
+                pollfds.push_back(tmp);
+                std::cout << clientSocket << " : Client connected." << std::endl;
+        //         break ; 
+        //     }
+        // }
     }
 public:
     IRCServer() {
@@ -215,13 +219,17 @@ public:
             exit(1);
         }
 
-        pollfds[0].fd = serverSocket;
-        pollfds[0].events = POLLIN;
 
-        for (size_t i = 1; i < MAX_CONNECTIONS; i++)
-        {
-            pollfds[i].fd = -1;
-        }
+        struct pollfd tmp;
+        tmp.fd = serverSocket;
+        tmp.events = POLLIN;
+
+        pollfds.push_back(tmp);
+
+        // for (size_t i = 1; i < MAX_CONNECTIONS; i++)
+        // {
+        //     pollfds[i].fd = -1;
+        // }
         
         std::cout << "IRC Server started on port " << SERVER_PORT << std::endl;
     }
@@ -232,7 +240,7 @@ public:
         int pollResult;
 
         while (true) {
-            pollResult = poll(pollfds, MAX_CONNECTIONS, -1);
+            pollResult = poll(&pollfds[0], pollfds.size(), -1);
             if (pollResult == -1) {
                 // 오류 처리
                 std::cerr << "Error in poll." << std::endl;
@@ -252,7 +260,7 @@ public:
                 handleClient(clientSocket);
             }
 
-            for (size_t i = 1; i < MAX_CONNECTIONS; i++)
+            for (size_t i = 1; i < pollfds.size(); i++)
             {
                 if (pollfds[i].fd > 0 && pollfds[i].revents & POLLIN)
                 {
