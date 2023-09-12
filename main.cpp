@@ -56,6 +56,10 @@ const int MAX_CONNECTIONS = 10;
 // }
 
 class User {
+private:
+    int socket;
+    std::string nickname;
+
 public:
     User(int socket, const std::string& nickname) : socket(socket), nickname(nickname) {}
 
@@ -66,10 +70,6 @@ public:
     std::string getNickname() const {
         return nickname;
     }
-
-private:
-    int socket;
-    std::string nickname;
 };
 
 class Channel {
@@ -100,55 +100,17 @@ private:
     std::vector<User> users;
 };
 
+
+
 class IRCServer {
-public:
-    IRCServer() {
-        // 서버 초기화
-        serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-        if (serverSocket == -1) {
-            std::cerr << "Error: Unable to create server socket." << std::endl;
-            exit(1);
-        }
-
-        // 서버 주소 설정
-        serverAddress.sin_family = AF_INET;
-        serverAddress.sin_port = htons(SERVER_PORT);
-        serverAddress.sin_addr.s_addr = INADDR_ANY;
-
-        // 서버 바인딩
-        if (bind(serverSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1) {
-            std::cerr << "Error: Binding failed." << std::endl;
-            exit(1);
-        }
-
-        // 서버 리스닝
-        if (listen(serverSocket, MAX_CONNECTIONS) == -1) {
-            std::cerr << "Error: Listening failed." << std::endl;
-            exit(1);
-        }
-
-        std::cout << "IRC Server started on port " << SERVER_PORT << std::endl;
-    }
-
-    void acceptConnections() {
-        while (true) {
-            int clientLen = sizeof(clientAddr);
-            int clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, (socklen_t *)&clientLen);
-            if (clientSocket == -1) {
-                std::cerr << "Error: Unable to accept client connection." << std::endl;
-                continue;
-            }
-
-            // 클라이언트와 통신 시작
-            handleClient(clientSocket);
-        }
-    }
-
 private:
     int serverSocket;
     struct sockaddr_in serverAddress, clientAddr;
     std::vector<User> users;
     std::vector<Channel> channels;
+    // struct pollfd pollfds[MAX_CONNECTIONS];
+    std::vector<struct pollfd> pollfds;
+    char buffer[532];
 
     // 사용자 추가
     void addUser(int clientSocket, const std::string& nickname) {
@@ -216,19 +178,69 @@ private:
 
     void handleClient(int clientSocket) {
         // 클라이언트와 연결되었음을 알림
-        std::cout << "Client connected." << std::endl;
 
-        // 클라이언트와 통신을 처리하는 코드를 작성
-        char buffer[1024];
+        // for (size_t i = 1; i < MAX_CONNECTIONS; i++)
+        // {
+        //     if (pollfds[i].fd == -1)
+        //     {
+                struct pollfd tmp;
+                tmp.fd = clientSocket;
+                tmp.events = POLLIN;
+
+                pollfds.push_back(tmp);
+                std::cout << clientSocket << " : Client connected." << std::endl;
+        //         break ; 
+        //     }
+        // }
+    }
+public:
+    IRCServer() {
+        // 서버 초기화
+        serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+        if (serverSocket == -1) {
+            std::cerr << "Error: Unable to create server socket." << std::endl;
+            exit(1);
+        }
+
+        // 서버 주소 설정
+        serverAddress.sin_family = AF_INET;
+        serverAddress.sin_port = htons(SERVER_PORT);
+        serverAddress.sin_addr.s_addr = INADDR_ANY;
+
+        // 서버 바인딩
+        if (bind(serverSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1) {
+            std::cerr << "Error: Binding failed." << std::endl;
+            exit(1);
+        }
+
+        // 서버 리스닝
+        if (listen(serverSocket, MAX_CONNECTIONS) == -1) {
+            std::cerr << "Error: Listening failed." << std::endl;
+            exit(1);
+        }
+
+
+        struct pollfd tmp;
+        tmp.fd = serverSocket;
+        tmp.events = POLLIN;
+
+        pollfds.push_back(tmp);
+
+        // for (size_t i = 1; i < MAX_CONNECTIONS; i++)
+        // {
+        //     pollfds[i].fd = -1;
+        // }
+        
+        std::cout << "IRC Server started on port " << SERVER_PORT << std::endl;
+    }
+
+    void acceptConnections() {
+        int clientLen = sizeof(clientAddr);
+        int clientSocket;
+        int pollResult;
+
         while (true) {
-            // poll 구조체 초기화
-            struct pollfd pollfds[1];
-            pollfds[0].fd = clientSocket;
-            pollfds[0].events = POLLIN;
-
-            // int pollResult = poll(pollfds, 1, -1); // 무제한 대기
-            int pollResult = poll(pollfds, 100, 500); // 무제한 대기
-
+            pollResult = poll(&pollfds[0], pollfds.size(), -1);
             if (pollResult == -1) {
                 // 오류 처리
                 std::cerr << "Error in poll." << std::endl;
@@ -237,42 +249,65 @@ private:
                 // 타임아웃 처리
                 continue;
             }
+            
+            if (pollfds[0].revents & POLLIN)
+            {
+                clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, (socklen_t *)&clientLen);
+                if (clientSocket == -1) {
+                    std::cerr << "Error: Unable to accept client connection." << std::endl;
+                    continue;
+                }
+                handleClient(clientSocket);
+            }
 
-            if (pollfds[0].revents & POLLIN) {
+            for (size_t i = 1; i < pollfds.size(); i++)
+            {
+                if (pollfds[i].fd > 0 && pollfds[i].revents & POLLIN)
+                {
                 // 클라이언트로부터 데이터 수신
-                ssize_t bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
+                ssize_t bytesRead = recv(pollfds[i].fd, buffer, sizeof(buffer), 0);
                 if (bytesRead <= 0) {
-                    // 클라이언트 연결 종료 또는 오류 발생
+                    close(pollfds[i].fd);
+                    pollfds[i].fd = -1;
+                    std::cout << i << ": Client disconnected." << std::endl;
                     break;
                 }
+
 
                 // 수신한 데이터를 문자열로 변환
                 std::string receivedMessage(buffer, bytesRead);
 
                 // 수신한 데이터 처리
-                std::cout << "Received message: " << receivedMessage << std::endl;
+                std::cout << i << " client Received message: " << receivedMessage << std::endl;
                 
-                std::size_t found = receivedMessage.find("CAP LS");
-                if (found!=std::string::npos) {
-                    std::cout << "We find CAP LS" << std::endl;
+                //std::size_t found = receivedMessage.find("CAP LS");
+                //if (found!=std::string::npos) {
+                //    std::cout << "We find CAP LS" << std::endl;
                     
-                    std::string response = "CAP LS\n";
+                //    std::string response = "CAP LS\n";
+                //    send(clientSocket, response.c_str(), response.length(), 0);
+                //}
+				if (receivedMessage == "JOIN :\n")
+				{
+					std::cout << "join\n";
+					std::string response = "461";
                     send(clientSocket, response.c_str(), response.length(), 0);
-                }
-
+				}
                 // 예시: "HI" 명령어를 처리
                 if (receivedMessage == "HI\n") {
                     std::string response = "Hello, Client!\n";
                     send(clientSocket, response.c_str(), response.length(), 0);
                 }
+                }
+                if (pollfds[i].revents & (POLLHUP | POLLERR))
+                {
+                    close(pollfds[i].fd) ;
+                    std::cout << pollfds[i].fd << ": Client disconnected." << std::endl;
+                }
             }
+            
+            
         }
-
-        // 클라이언트와의 통신이 끝나면 연결 종료
-        close(clientSocket);
-
-        // 연결이 종료되었음을 알림
-        std::cout << "Client disconnected." << std::endl;
     }
 };
 
