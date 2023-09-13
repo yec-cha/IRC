@@ -62,11 +62,19 @@ private:
 	std::string nickName;
 	std::string userName;
 	std::string hostName;
-	bool registered;
 
 public:
+	bool hasNick;
+	bool hasUser;
+	bool isPassed;
+	bool isRegistered;
+
 	User(int socket) : socket(socket)
 	{
+		isRegistered = false;
+		isPassed = false;
+		hasNick = false;
+		hasUser = false;
 	}
 
 	int getSocket() const
@@ -79,9 +87,9 @@ public:
 		return nickName;
 	}
 
-	bool isRegistered()
+	void setNick(const std::string &nick)
 	{
-		return registered;
+		nickName = nick;
 	}
 };
 
@@ -130,6 +138,69 @@ private:
 	// struct pollfd pollfds[MAX_CONNECTIONS];
 	std::vector<struct pollfd> pollfds;
 	char buffer[532];
+
+	void cmdNick(std::vector<User>::iterator &iter, std::string &msg)
+	{
+		std::string response;
+
+		if (iter->isRegistered)
+		{
+			if (iter->isPassed)
+			{
+				iter->setNick(msg);
+			}
+		}
+		else
+		{
+			response = ":yecnam NICK hi\n";
+			send(iter->getSocket(), response.c_str(), response.length(), 0);
+		}
+	}
+
+	void beforeRegisterdMsg(std::string &cmd, std::string &msg, std::vector<User>::iterator &iter)
+	{
+		std::string response;
+
+		if (cmd == "NICK")
+		{
+			cmdNick(iter, msg);
+		}
+		else if (cmd == "PASS")
+		{
+			iter->isPassed = true;
+		}
+		else if (cmd == "USER")
+		{
+			iter->isRegistered = true;
+		}
+		else if (cmd == "CAP")
+		{
+			;
+		}
+		else
+		{
+			response = "451 : client must be registered\n";
+			send(iter->getSocket(), response.c_str(), response.length(), 0);
+		}
+
+		if (iter->isRegistered)
+		{
+			response = "001 yecnam :Welcome to the Internet Relay Network yecnam!yecnam@yecnam\n";
+			send(iter->getSocket(), response.c_str(), response.length(), 0);
+
+			response = "002 :Your host is ft_irc, running version 1\n";
+			send(iter->getSocket(), response.c_str(), response.length(), 0);
+
+			response = "003 :This server was created 2022.3.18\n";
+			send(iter->getSocket(), response.c_str(), response.length(), 0);
+
+			response = "004 :ft_irc 1 +i +i\n";
+			send(iter->getSocket(), response.c_str(), response.length(), 0);
+
+			response = "Mode yecnam +i\n";
+			send(iter->getSocket(), response.c_str(), response.length(), 0);
+		}
+	}
 
 	// 사용자 추가
 	void addUser(int clientSocket)
@@ -218,34 +289,11 @@ private:
 
 		tmp.fd = clientSocket;
 		tmp.events = POLLIN;
-		std::string response;
 
 		pollfds.push_back(tmp);
 
 		User newUser(clientSocket);
 		users.push_back(newUser);
-
-		// while (1)
-		//{
-		// }
-
-		response = "451 : client must be registered\n";
-		send(clientSocket, response.c_str(), response.length(), 0);
-
-		response = "001 yecnam :Welcome to the Internet Relay Network yecnam!yecnam@yecnam\n";
-		send(clientSocket, response.c_str(), response.length(), 0);
-
-		response = "002 :Your host is ft_irc, running version 1\n";
-		send(clientSocket, response.c_str(), response.length(), 0);
-
-		response = "003 :This server was created 2022.3.18\n";
-		send(clientSocket, response.c_str(), response.length(), 0);
-
-		response = "004 :ft_irc 1 +i +i\n";
-		send(clientSocket, response.c_str(), response.length(), 0);
-
-		response = "Mode yecnam +i\n";
-		send(clientSocket, response.c_str(), response.length(), 0);
 
 		std::cout << clientSocket << " : Client connected." << std::endl;
 	}
@@ -286,11 +334,6 @@ public:
 
 		pollfds.push_back(tmp);
 
-		// for (size_t i = 1; i < MAX_CONNECTIONS; i++)
-		// {
-		//     pollfds[i].fd = -1;
-		// }
-
 		std::cout << "IRC Server started on port " << SERVER_PORT << std::endl;
 	}
 
@@ -304,7 +347,7 @@ public:
 
 		while (true)
 		{
-			pollResult = poll(&pollfds[0], pollfds.size(), -1);
+			pollResult = poll(&pollfds[0], pollfds.size(), 0);
 			if (pollResult == -1)
 			{
 				// 오류 처리
@@ -344,30 +387,32 @@ public:
 
 					// 수신한 데이터를 문자열로 변환
 					std::string receivedMessage(buffer, bytesRead);
-
+					std::string oneMsg;
+					std::stringstream ss(receivedMessage);
+					std::string command;
 					std::cout << iter->fd << " client Received message: " << receivedMessage << std::endl;
 
-					if (!iterUser->isRegistered())
+					while (std::getline(ss, oneMsg))
 					{
-						if (receivedMessage == "JOIN :\n")
+						command = oneMsg.substr(0, oneMsg.find(" "));
+						std::cout << "command : " << command << std::endl;
+
+						if (!iterUser->isRegistered)
 						{
-							std::cout << "join\n";
-							std::string response = "461";
-							send(clientSocket, response.c_str(), response.length(), 0);
+							beforeRegisterdMsg(command, oneMsg, iterUser);
 						}
-					}
-					else
-					{
-						if (receivedMessage == "JOIN :\n")
+						else
 						{
-							std::cout << "join\n";
-							std::string response = "461";
-							send(clientSocket, response.c_str(), response.length(), 0);
-						}
-						if (receivedMessage == "HI\n")
-						{
-							std::string response = "Hello, Client!\n";
-							send(clientSocket, response.c_str(), response.length(), 0);
+							if (command == "PING")
+							{
+								std::string response = "PONG " + iterUser->getnickname();
+								send(clientSocket, response.c_str(), response.length(), 0);
+							}
+							if (command == "HI\n")
+							{
+								std::string response = "Hello, Client!\n";
+								send(clientSocket, response.c_str(), response.length(), 0);
+							}
 						}
 					}
 				}
