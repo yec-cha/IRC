@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include <poll.h>
 
-const int SERVER_PORT = 6671;
+const int SERVER_PORT = 6670;
 const int MAX_CONNECTIONS = 10;
 
 // // 예제에서 사용할 Capability 목록
@@ -59,19 +59,29 @@ class User
 {
 private:
 	int socket;
-	std::string nickname;
+	std::string nickName;
+	std::string userName;
+	std::string hostName;
+	bool registered;
 
 public:
-	User(int socket, const std::string &nickname) : socket(socket), nickname(nickname) {}
+	User(int socket) : socket(socket)
+	{
+	}
 
 	int getSocket() const
 	{
 		return socket;
 	}
 
-	std::string getNickname() const
+	std::string getnickname() const
 	{
-		return nickname;
+		return nickName;
+	}
+
+	bool isRegistered()
+	{
+		return registered;
 	}
 };
 
@@ -122,9 +132,9 @@ private:
 	char buffer[532];
 
 	// 사용자 추가
-	void addUser(int clientSocket, const std::string &nickname)
+	void addUser(int clientSocket)
 	{
-		User user(clientSocket, nickname);
+		User user(clientSocket);
 		users.push_back(user);
 	}
 
@@ -205,20 +215,33 @@ private:
 	void handleClient(int clientSocket)
 	{
 		struct pollfd tmp;
+
 		tmp.fd = clientSocket;
 		tmp.events = POLLIN;
+		std::string response;
 
 		pollfds.push_back(tmp);
-		std::string response = ":ft_irc 001 yecnam :Welcome to the Internet Relay Network yecnam!yecnam@yecnam\n";
+
+		User newUser(clientSocket);
+		users.push_back(newUser);
+
+		// while (1)
+		//{
+		// }
+
+		response = "451 : client must be registered\n";
 		send(clientSocket, response.c_str(), response.length(), 0);
 
-		response = ":ft_irc 002 yecnam :Your host is ft_irc, running version 1\n";
+		response = "001 yecnam :Welcome to the Internet Relay Network yecnam!yecnam@yecnam\n";
 		send(clientSocket, response.c_str(), response.length(), 0);
 
-		response = ":ft_irc 003 yecnam :This server was created 2022.3.18\n";
+		response = "002 :Your host is ft_irc, running version 1\n";
 		send(clientSocket, response.c_str(), response.length(), 0);
 
-		response = ":ft_irc 004 yecnam :ft_irc 1 +i +i\n";
+		response = "003 :This server was created 2022.3.18\n";
+		send(clientSocket, response.c_str(), response.length(), 0);
+
+		response = "004 :ft_irc 1 +i +i\n";
 		send(clientSocket, response.c_str(), response.length(), 0);
 
 		response = "Mode yecnam +i\n";
@@ -276,6 +299,8 @@ public:
 		int clientLen = sizeof(clientAddr);
 		int clientSocket;
 		int pollResult;
+		std::vector<User>::iterator iterUser;
+		std::vector<struct pollfd>::iterator iter;
 
 		while (true)
 		{
@@ -303,50 +328,48 @@ public:
 				handleClient(clientSocket);
 			}
 
-			for (size_t i = 1; i < pollfds.size(); i++)
+			for (iter = pollfds.begin() + 1, iterUser = users.begin(); (iter != pollfds.end()) && (iterUser != users.end()); iter++, iterUser++)
 			{
-				if (pollfds[i].fd > 0 && pollfds[i].revents & POLLIN)
+				if (iter->fd > 0 && iter->revents & POLLIN)
 				{
-					// 클라이언트로부터 데이터 수신
-					ssize_t bytesRead = recv(pollfds[i].fd, buffer, sizeof(buffer), 0);
+					ssize_t bytesRead = recv(iter->fd, buffer, sizeof(buffer), 0);
 					if (bytesRead <= 0)
 					{
-						close(pollfds[i].fd);
-						pollfds[i].fd = -1;
-						std::cout << i << ": Client disconnected." << std::endl;
+						std::cout << iter->fd << ": Client disconnected." << std::endl;
+						close(iter->fd);
+						pollfds.erase(iter);
+						users.erase(iterUser);
 						break;
 					}
 
 					// 수신한 데이터를 문자열로 변환
 					std::string receivedMessage(buffer, bytesRead);
 
-					// 수신한 데이터 처리
-					std::cout << i << " client Received message: " << receivedMessage << std::endl;
+					std::cout << iter->fd << " client Received message: " << receivedMessage << std::endl;
 
-					// std::size_t found = receivedMessage.find("CAP LS");
-					// if (found!=std::string::npos) {
-					//     std::cout << "We find CAP LS" << std::endl;
-
-					//    std::string response = "CAP LS\n";
-					//    send(clientSocket, response.c_str(), response.length(), 0);
-					//}
-					if (receivedMessage == "JOIN :\n")
+					if (!iterUser->isRegistered())
 					{
-						std::cout << "join\n";
-						std::string response = "461";
-						send(clientSocket, response.c_str(), response.length(), 0);
+						if (receivedMessage == "JOIN :\n")
+						{
+							std::cout << "join\n";
+							std::string response = "461";
+							send(clientSocket, response.c_str(), response.length(), 0);
+						}
 					}
-					// 예시: "HI" 명령어를 처리
-					if (receivedMessage == "HI\n")
+					else
 					{
-						std::string response = "Hello, Client!\n";
-						send(clientSocket, response.c_str(), response.length(), 0);
+						if (receivedMessage == "JOIN :\n")
+						{
+							std::cout << "join\n";
+							std::string response = "461";
+							send(clientSocket, response.c_str(), response.length(), 0);
+						}
+						if (receivedMessage == "HI\n")
+						{
+							std::string response = "Hello, Client!\n";
+							send(clientSocket, response.c_str(), response.length(), 0);
+						}
 					}
-				}
-				if (pollfds[i].revents & (POLLHUP | POLLERR))
-				{
-					close(pollfds[i].fd);
-					std::cout << pollfds[i].fd << ": Client disconnected." << std::endl;
 				}
 			}
 		}
