@@ -13,15 +13,15 @@ public:
 		users.push_back(user);
 	}
 
-	void removeUser(int socket)
-	{
-		users.erase(std::remove_if(users.begin(), users.end(),
-								   [socket](const User &user)
-								   {
-									   return user.getSocket() == socket;
-								   }),
-					users.end());
-	}
+	// void removeUser(int socket)
+	// {
+	// 	users.erase(std::remove_if(users.begin(), users.end(),
+	// 							   [socket](const User &user)
+	// 							   {
+	// 								   return user.getSocket() == socket;
+	// 							   }),
+	// 				users.end());
+	// }
 
 	std::string getName() const
 	{
