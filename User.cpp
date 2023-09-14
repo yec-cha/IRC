@@ -74,11 +74,15 @@ void User::setIsRegistered(bool flag) {
 void User::setNickName(const std::string& name) {
 	this->nickName_ = name;
 	this->hasNick = true;
+	if (this->isPassed == true && this->hasUser == true)
+		this->isRegistered == true;
 }
 
 void User::setUserName(const std::string& name) {
 	this->userName_ = name;
 	this->hasUser = true;
+	if (this->isPassed == true && this->hasNick == true)
+		this->isRegistered == true;
 }
 
 void User::setHostName(const std::string& name) {
