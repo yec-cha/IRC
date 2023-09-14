@@ -2,43 +2,53 @@
 # define USER_HPP
 
 # include <string>
+# include <map>
 
-class User
-{
+/* Parameters: <username> <hostname> <servername> <realname> */
+class User {
 private:
-	int socket;
-	std::string nickName;
-	std::string userName;
-	std::string hostName;
-
-public:
+	int socket_;
+	std::string nickName_;
+	std::string userName_;
+	std::string hostName_;
+	std::string serverName_;
+	std::string realName_;
+	
+	bool isPassed;
 	bool hasNick;
 	bool hasUser;
-	bool isPassed;
 	bool isRegistered;
 
-	User(int socket) : socket(socket)
-	{
-		isRegistered = false;
-		isPassed = false;
-		hasNick = false;
-		hasUser = false;
-	}
+	User();
 
-	int getSocket() const
-	{
-		return socket;
-	}
+public:
+	User(int socket);
+	User(const User& user);
+	User& operator=(const User& user);
+	~User();
 
-	std::string getnickname() const
-	{
-		return nickName;
-	}
+	int getSocket();
+	const std::string& getNickName() const;
+	const std::string& getUserName() const;
+	const std::string& getHostName() const;
+	const std::string& getServerName() const;
+	const std::string& getRealName() const;
+	
+	bool getIsPassed() const;
+	bool getHasNick() const;
+	bool getHasUser() const;
+	bool getIsRegistered() const;
 
-	void setNick(const std::string &nick)
-	{
-		nickName = nick;
-	}
+	void setIsPassed(bool flag);
+	void setHasNick(bool flag);
+	void setHasUser(bool flag);
+	void setIsRegistered(bool flag);
+	
+	void setNickName(const std::string& name);
+	void setUserName(const std::string& name);
+	void setHostName(const std::string& name);
+	void setServerName(const std::string& name);
+	void setRealName(const std::string& name);
 };
 
 #endif
