@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include <poll.h>
 
-const int SERVER_PORT = 6670;
+// const int SERVER_PORT = 6670;
 const int MAX_CONNECTIONS = 10;
 
 // // 예제에서 사용할 Capability 목록
@@ -138,6 +138,7 @@ private:
 	// struct pollfd pollfds[MAX_CONNECTIONS];
 	std::vector<struct pollfd> pollfds;
 	char buffer[532];
+    int port_;
 
 	void cmdNick(std::vector<User>::iterator &iter, std::string &msg)
 	{
@@ -311,7 +312,7 @@ public:
 
 		// 서버 주소 설정
 		serverAddress.sin_family = AF_INET;
-		serverAddress.sin_port = htons(SERVER_PORT);
+		serverAddress.sin_port = htons(this->port_);
 		serverAddress.sin_addr.s_addr = INADDR_ANY;
 
 		// 서버 바인딩
@@ -334,7 +335,45 @@ public:
 
 		pollfds.push_back(tmp);
 
-		std::cout << "IRC Server started on port " << SERVER_PORT << std::endl;
+		std::cout << "IRC Server started on port " << this->port_ << std::endl;
+	}
+
+    IRCServer(int port) : port_(port)
+	{
+		// 서버 초기화
+		serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+		if (serverSocket == -1)
+		{
+			std::cerr << "Error: Unable to create server socket." << std::endl;
+			exit(1);
+		}
+
+		// 서버 주소 설정
+		serverAddress.sin_family = AF_INET;
+		serverAddress.sin_port = htons(this->port_);
+		serverAddress.sin_addr.s_addr = INADDR_ANY;
+
+		// 서버 바인딩
+		if (bind(serverSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) == -1)
+		{
+			std::cerr << "Error: Binding failed." << std::endl;
+			exit(1);
+		}
+
+		// 서버 리스닝
+		if (listen(serverSocket, MAX_CONNECTIONS) == -1)
+		{
+			std::cerr << "Error: Listening failed." << std::endl;
+			exit(1);
+		}
+
+		struct pollfd tmp;
+		tmp.fd = serverSocket;
+		tmp.events = POLLIN;
+
+		pollfds.push_back(tmp);
+
+		std::cout << "IRC Server started on port " << this->port_ << std::endl;
 	}
 
 	void acceptConnections()
@@ -422,9 +461,26 @@ public:
 	}
 };
 
-int main()
-{
-	IRCServer server;
+
+bool checkArguments(int argc, char** argv) {
+    if (argc != 3)
+        return false;
+    std::string port(argv[1]);
+    if (port.size() != 4)
+        return false;
+    // std::string::iterator iter = port.begin();
+    for (std::string::iterator iter = port.begin(); iter < port.end(); ++iter) {
+        if (std::isdigit(*iter) == false)
+            return false;
+    }
+    return true;
+}
+
+int main(int argc, char** argv) {
+	if (checkArguments(argc, argv) == false)
+        return 1;
+    
+    IRCServer server(std::atoi(argv[1]));
 	server.acceptConnections();
 	return 0;
 }
