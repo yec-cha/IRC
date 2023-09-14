@@ -405,7 +405,8 @@ public:
 						{
 							if (command == "PING")
 							{
-								std::string response = "PONG " + iterUser->getnickname();
+								// std::string response = "PONG " + iterUser->getnickname();
+                                std::string response = "PONG localhost\n";
 								send(clientSocket, response.c_str(), response.length(), 0);
 							}
 							if (command == "HI\n")
