@@ -13,7 +13,6 @@
 # include "User.hpp"
 # include "Channel.hpp"
 
-// const int SERVER_PORT = 6670;
 const int MAX_CONNECTIONS = 10;
 
 class User;
@@ -34,11 +33,11 @@ private:
 	{
 		std::string response;
 
-		if (iter->isRegistered)
+		if (iter->getIsRegistered())
 		{
-			if (iter->isPassed)
+			if (iter->getIsPassed())
 			{
-				iter->setNick(msg);
+				iter->setNickName(msg);
 			}
 		}
 		else
@@ -58,11 +57,11 @@ private:
 		}
 		else if (cmd == "PASS")
 		{
-			iter->isPassed = true;
+			iter->setIsPassed(true);
 		}
 		else if (cmd == "USER")
 		{
-			iter->isRegistered = true;
+			iter->setIsRegistered(true);
 		}
 		else if (cmd == "CAP")
 		{
@@ -74,7 +73,7 @@ private:
 			send(iter->getSocket(), response.c_str(), response.length(), 0);
 		}
 
-		if (iter->isRegistered)
+		if (iter->getIsRegistered())
 		{
 			response = "001 yecnam :Welcome to the Internet Relay Network yecnam!yecnam@yecnam\n";
 			send(iter->getSocket(), response.c_str(), response.length(), 0);
@@ -101,21 +100,21 @@ private:
 	}
 
 	// 사용자 제거
-	void removeUser(int clientSocket)
-	{
-		users.erase(std::remove_if(users.begin(), users.end(),
-								   [clientSocket](const User &user)
-								   {
-									   return user.getSocket() == clientSocket;
-								   }),
-					users.end());
+	// void removeUser(int clientSocket)
+	// {
+	// 	users.erase(std::remove_if(users.begin(), users.end(),
+	// 							   [clientSocket](const User &user)
+	// 							   {
+	// 								   return user.getSocket() == clientSocket;
+	// 							   }),
+	// 				users.end());
 
-		// 채널에서도 해당 사용자 제거
-		for (Channel &channel : channels)
-		{
-			channel.removeUser(clientSocket);
-		}
-	}
+	// 	// 채널에서도 해당 사용자 제거
+	// 	for (Channel &channel : channels)
+	// 	{
+	// 		channel.removeUser(clientSocket);
+	// 	}
+	// }
 
 	// 채널 추가
 	void addChannel(const std::string &channelName)
@@ -135,44 +134,44 @@ private:
 					   channels.end());
 	}
 
-	// 사용자가 채널에 가입
-	void joinChannel(int clientSocket, const std::string &channelName)
-	{
-		for (Channel &channel : channels)
-		{
-			if (channel.getName() == channelName)
-			{
-				channel.addUser(getUserBySocket(clientSocket));
-				break;
-			}
-		}
-	}
+	// // 사용자가 채널에 가입
+	// void joinChannel(int clientSocket, const std::string &channelName)
+	// {
+	// 	for (Channel &channel : channels)
+	// 	{
+	// 		if (channel.getName() == channelName)
+	// 		{
+	// 			channel.addUser(getUserBySocket(clientSocket));
+	// 			break;
+	// 		}
+	// 	}
+	// }
 
 	// 사용자가 채널에서 나가기
-	void leaveChannel(int clientSocket, const std::string &channelName)
-	{
-		for (Channel &channel : channels)
-		{
-			if (channel.getName() == channelName)
-			{
-				channel.removeUser(clientSocket);
-				break;
-			}
-		}
-	}
+	// void leaveChannel(int clientSocket, const std::string &channelName)
+	// {
+	// 	for (Channel &channel : channels)
+	// 	{
+	// 		if (channel.getName() == channelName)
+	// 		{
+	// 			channel.removeUser(clientSocket);
+	// 			break;
+	// 		}
+	// 	}
+	// }
 
-	// 소켓을 통해 사용자 찾기
-	User getUserBySocket(int socket)
-	{
-		for (const User &user : users)
-		{
-			if (user.getSocket() == socket)
-			{
-				return user;
-			}
-		}
-		throw std::runtime_error("User not found");
-	}
+	// // 소켓을 통해 사용자 찾기
+	// User getUserBySocket(int socket)
+	// {
+	// 	for (const User &user : users)
+	// 	{
+	// 		if (user.getSocket() == socket)
+	// 		{
+	// 			return user;
+	// 		}
+	// 	}
+	// 	throw std::runtime_error("User not found");
+	// }
 
 	void handleClient(int clientSocket)
 	{
@@ -190,46 +189,8 @@ private:
 	}
 
 public:
-	IRCServer()
-	{
-		// 서버 초기화
-		serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-		if (serverSocket == -1)
-		{
-			std::cerr << "Error: Unable to create server socket." << std::endl;
-			exit(1);
-		}
-
-		// 서버 주소 설정
-		serverAddress.sin_family = AF_INET;
-		serverAddress.sin_port = htons(this->port_);
-		serverAddress.sin_addr.s_addr = INADDR_ANY;
-
-		// 서버 바인딩
-		if (bind(serverSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) == -1)
-		{
-			std::cerr << "Error: Binding failed." << std::endl;
-			exit(1);
-		}
-
-		// 서버 리스닝
-		if (listen(serverSocket, MAX_CONNECTIONS) == -1)
-		{
-			std::cerr << "Error: Listening failed." << std::endl;
-			exit(1);
-		}
-
-		struct pollfd tmp;
-		tmp.fd = serverSocket;
-		tmp.events = POLLIN;
-
-		pollfds.push_back(tmp);
-
-		std::cout << "IRC Server started on port " << this->port_ << std::endl;
-	}
-
-    IRCServer(int port) : port_(port)
-	{
+	IRCServer() {}
+    IRCServer(int port) : port_(port) {
 		// 서버 초기화
 		serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 		if (serverSocket == -1)
@@ -326,7 +287,7 @@ public:
 						command = oneMsg.substr(0, oneMsg.find(" "));
 						std::cout << "command : " << command << std::endl;
 
-						if (!iterUser->isRegistered)
+						if (!iterUser->getIsRegistered())
 						{
 							beforeRegisterdMsg(command, oneMsg, iterUser);
 						}
