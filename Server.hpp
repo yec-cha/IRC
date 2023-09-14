@@ -1,24 +1,27 @@
 #ifndef SERVER_HPP
-# define SERVER_HPP
+#define SERVER_HPP
 
-# include <iostream>
-# include <vector>
-# include <string>
-# include <sstream>
-# include <sys/socket.h>
-# include <netinet/in.h>
-# include <unistd.h>
-# include <poll.h>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <poll.h>
 
-# include "User.hpp"
-# include "Channel.hpp"
+#include "User.hpp"
+#include "Channel.hpp"
+#include "CmdManager.hpp"
 
 const int MAX_CONNECTIONS = 10;
 
 class User;
 class Channel;
+class CmdManager;
 
-class IRCServer {
+class IRCServer
+{
 private:
 	int serverSocket;
 	struct sockaddr_in serverAddress, clientAddr;
@@ -26,8 +29,10 @@ private:
 	std::vector<Channel> channels;
 	// struct pollfd pollfds[MAX_CONNECTIONS];
 	std::vector<struct pollfd> pollfds;
+	CmdManager cm;
+
 	char buffer[532];
-    int port_;
+	int port_;
 
 	void cmdNick(std::vector<User>::iterator &iter, std::string &msg);
 	void beforeRegisterdMsg(std::string &cmd, std::string &msg, std::vector<User>::iterator &iter);
@@ -35,10 +40,9 @@ private:
 
 public:
 	IRCServer();
-    IRCServer(int port);
+	IRCServer(int port);
 
 	void acceptConnections();
 };
-
 
 #endif

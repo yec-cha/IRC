@@ -1,10 +1,12 @@
 #include "Server.hpp"
 
-IRCServer::IRCServer() {}
+IRCServer::IRCServer() : cm(users, channels) {}
 
-IRCServer::IRCServer(int port) : port_(port) {
+IRCServer::IRCServer(int port) : cm(users, channels), port_(port)
+{
 	this->serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-	if (this->serverSocket == -1) {
+	if (this->serverSocket == -1)
+	{
 		std::cerr << "Error: Unable to create server socket." << std::endl;
 		exit(1);
 	}
@@ -12,12 +14,14 @@ IRCServer::IRCServer(int port) : port_(port) {
 	this->serverAddress.sin_family = AF_INET;
 	this->serverAddress.sin_port = htons(this->port_);
 	this->serverAddress.sin_addr.s_addr = INADDR_ANY;
-	if (bind(serverSocket, (struct sockaddr *)&this->serverAddress, sizeof(this->serverAddress)) == -1) {
+	if (bind(serverSocket, (struct sockaddr *)&this->serverAddress, sizeof(this->serverAddress)) == -1)
+	{
 		std::cerr << "Error: Binding failed." << std::endl;
 		exit(1);
 	}
 
-	if (listen(this->serverSocket, MAX_CONNECTIONS) == -1) {
+	if (listen(this->serverSocket, MAX_CONNECTIONS) == -1)
+	{
 		std::cerr << "Error: Listening failed." << std::endl;
 		exit(1);
 	}
@@ -29,7 +33,8 @@ IRCServer::IRCServer(int port) : port_(port) {
 	std::cout << "IRC Server started on port " << this->port_ << std::endl;
 }
 
-void IRCServer::cmdNick(std::vector<User>::iterator &iter, std::string &msg) {
+void IRCServer::cmdNick(std::vector<User>::iterator &iter, std::string &msg)
+{
 	std::string response;
 
 	if (iter->getIsRegistered())
@@ -46,7 +51,8 @@ void IRCServer::cmdNick(std::vector<User>::iterator &iter, std::string &msg) {
 	}
 }
 
-void IRCServer::beforeRegisterdMsg(std::string &cmd, std::string &msg, std::vector<User>::iterator &iter) {
+void IRCServer::beforeRegisterdMsg(std::string &cmd, std::string &msg, std::vector<User>::iterator &iter)
+{
 	std::string response;
 
 	if (cmd == "NICK")
@@ -90,7 +96,8 @@ void IRCServer::beforeRegisterdMsg(std::string &cmd, std::string &msg, std::vect
 	}
 }
 
-void IRCServer::handleClient(int clientSocket) {
+void IRCServer::handleClient(int clientSocket)
+{
 	struct pollfd tmp;
 
 	tmp.fd = clientSocket;
@@ -161,27 +168,7 @@ void IRCServer::acceptConnections()
 
 				while (std::getline(ss, oneMsg))
 				{
-					command = oneMsg.substr(0, oneMsg.find(" "));
-					std::cout << "command : " << command << std::endl;
-
-					if (!iterUser->getIsRegistered())
-					{
-						beforeRegisterdMsg(command, oneMsg, iterUser);
-					}
-					else
-					{
-						if (command == "PING")
-						{
-							// std::string response = "PONG " + iterUser->getnickname();
-							std::string response = "PONG localhost\n";
-							send(clientSocket, response.c_str(), response.length(), 0);
-						}
-						if (command == "HI\n")
-						{
-							std::string response = "Hello, Client!\n";
-							send(clientSocket, response.c_str(), response.length(), 0);
-						}
-					}
+					cm.exeCmd(oneMsg, iterUser);
 				}
 			}
 		}
