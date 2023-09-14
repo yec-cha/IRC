@@ -117,22 +117,22 @@ private:
 	// }
 
 	// 채널 추가
-	void addChannel(const std::string &channelName)
-	{
-		Channel channel(channelName);
-		channels.push_back(channel);
-	}
+	// void addChannel(const std::string &channelName)
+	// {
+	// 	Channel channel(channelName);
+	// 	channels.push_back(channel);
+	// }
 
 	// 채널 제거
-	void removeChannel(const std::string &channelName)
-	{
-		channels.erase(std::remove_if(channels.begin(), channels.end(),
-									  [channelName](const Channel &channel)
-									  {
-										  return channel.getName() == channelName;
-									  }),
-					   channels.end());
-	}
+	// void removeChannel(const std::string &channelName)
+	// {
+	// 	channels.erase(std::remove_if(channels.begin(), channels.end(),
+	// 								  [channelName](const Channel &channel)
+	// 								  {
+	// 									  return channel.getName() == channelName;
+	// 								  }),
+	// 				   channels.end());
+	// }
 
 	// // 사용자가 채널에 가입
 	// void joinChannel(int clientSocket, const std::string &channelName)
