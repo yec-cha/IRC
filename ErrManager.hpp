@@ -10,6 +10,8 @@
 #include <unistd.h>
 #include <poll.h>
 
+#include "color.hpp"
+
 class ErrManager
 {
 private:
@@ -19,7 +21,7 @@ private:
 	static void sendClient(int socket, const std::string &msg)
 	{
 		send(socket, msg.c_str(), msg.length(), 0);
-		std::cout << "server (to " << socket << ") :" << msg << std::endl;
+		std::cout << "server (to " << socket << ") :" << RED << msg << RESET << std::endl;
 	};
 
 public:
