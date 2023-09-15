@@ -4,10 +4,10 @@ void CmdManager::sendClient(int socket, const std::string msg)
 {
 	if (send(socket, msg.c_str(), msg.size(), 0) == -1)
 	{
-		std::cout << RED << "Send message failed" << RESET << std::endl;
+		std::cout << BOLDRED << "Send message failed" << RESET << std::endl;
 		return ;
 	}
-	std::cout << "server (to " << socket << ") :" << msg << std::endl;
+	std::cout << "server (to " << socket << ") : " << BLUE << msg << RESET << std::endl;
 };
 
 CmdManager::CmdManager(std::vector<User> &_users, std::vector<Channel> &_channels) : users(_users), channels(_channels){};
@@ -22,7 +22,7 @@ void CmdManager::exeCmd(std::string msg, std::vector<User>::iterator &user)
 
 	while (*msg.begin() == ' ')
 		msg.erase(msg.begin());
-	while (*(msg.end() - 1) == ' ')
+	while (*(msg.end() - 1) == ' ' || *(msg.end() - 1) == '\r' || *(msg.end() - 1) == '\n')
 		msg.erase(msg.end() - 1);
 
 	if (msg.find(" ") == std::string::npos)
@@ -52,16 +52,18 @@ void CmdManager::exeCmd(std::string msg, std::vector<User>::iterator &user)
 		}
 	}
 	if (msg.size() != 0)
-		parameters.push_back(msg.substr(start));
-
-
-	std::cout << "cmd : " << command << std::endl;
-	std::cout << "parameters --------------------\n";
-	for (size_t i = 0; i < parameters.size(); i++)
 	{
-		std::cout << parameters[i] << "E" << std::endl;
+		parameters.push_back(msg.substr(start));
 	}
-	std::cout << "----------------------------------\n";
+
+
+	// std::cout << "cmd : " << command << std::endl;
+	// std::cout << "parameters --------------------\n";
+	// for (size_t i = 0; i < parameters.size(); i++)
+	// {
+	// 	std::cout << parameters[i].c_str() << "E" << std::endl;
+	// }
+	// std::cout << "----------------------------------\n";
 	
 	// std::cout << "command : " << command << std::endl;
 
@@ -103,7 +105,7 @@ void CmdManager::cmd_NICK(const std::vector<std::string> &parameters, std::vecto
 	{
 		iter->setNickName(parameters[0]);
 
-		std::cout << iter->getSocket() << ": set NICK\n";
+		std::cout << iter->getSocket() << ": set NICK to [" << parameters[0] << "] \n";
 	}
 }
 
@@ -157,17 +159,7 @@ void CmdManager::beforeRegisteredMsg(std::string &cmd, const std::vector<std::st
 	
 	if (iter->getIsRegistered())
 	{
-		std::cout << RED << "REGISTERD" << RESET << std::endl;
-
-		std::cout << "nick :" << iter->getNickName() << std::endl;
-
-		std::string s1 = "001 ";
-		std::string s2 = " :Welcome to the Internet Relay Network\n";
-		std::string nick = iter->getNickName();
-
-		std::string response = s1 + nick + s2;
-		std::cout << response << nick << std::endl;
-		sendClient(iter->getSocket(), response);
+		sendClient(iter->getSocket(), "001 " + iter->getNickName() + " :Welcome to the Internet Relay Network\n");	
 		sendClient(iter->getSocket(), ("002 :Your host is ft_irc, running version 1\n"));
 		sendClient(iter->getSocket(), ("003 :This server was created 2022.3.18\n"));
 		sendClient(iter->getSocket(), ("004 :ft_irc 1 +i +i\n"));

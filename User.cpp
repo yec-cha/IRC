@@ -103,7 +103,6 @@ void User::setUserName(const std::string &name)
 	this->hasUser = true;
 	if (this->isPassed == true && this->hasNick == true)
 	{
-		std::cout << "REGISTER NOW\n" << std::endl;
 		this->isRegistered = true;
 	}
 }
