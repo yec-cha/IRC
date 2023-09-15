@@ -25,6 +25,12 @@ private:
 	};
 
 public:
+	static void send_409(int socket)
+	{
+		const std::string response = "409 :No origin specified\n";
+		sendClient(socket, response);
+	};
+
 	static void send_431(int socket)
 	{
 		const std::string response = "431 :No nickname given\n";

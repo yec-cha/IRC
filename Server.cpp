@@ -153,25 +153,33 @@ void IRCServer::acceptConnections()
 				ssize_t bytesRead = recv(iter->fd, buffer, sizeof(buffer), 0);
 				if (bytesRead <= 0)
 				{
+					iterUser->endCilent();
 					std::cout << iter->fd << ": Client disconnected." << std::endl;
+				}
+				else
+				{
+					std::string receivedMessage(buffer, bytesRead);
+					std::string oneMsg;
+					std::stringstream ss(receivedMessage);
+					std::string command;
+					std::cout << iter->fd << " client Received message: " << receivedMessage << std::endl;
+
+					while (std::getline(ss, oneMsg))
+					{
+						cm.exeCmd(oneMsg, iterUser);
+					}
+				}
+				
+				if (iterUser->getIsEnd())
+				{
+					std::cout << iter->fd << RED " CLIENT END" RESET << "\n\n";
 					close(iter->fd);
 					pollfds.erase(iter);
 					users.erase(iterUser);
+
+					std::cout << "remain clients :" << users.size() << " " << pollfds.size() << std::endl;
 					break;
 				}
-
-				// 수신한 데이터를 문자열로 변환
-				std::string receivedMessage(buffer, bytesRead);
-				std::string oneMsg;
-				std::stringstream ss(receivedMessage);
-				std::string command;
-				std::cout << iter->fd << " client Received message: " << receivedMessage << std::endl;
-
-				while (std::getline(ss, oneMsg, '\n'))
-				{
-					cm.exeCmd(oneMsg, iterUser);
-				}
-
 			}
 		}
 	}

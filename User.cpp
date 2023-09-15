@@ -4,7 +4,7 @@
 User::User() : socket_(-1) {}
 
 User::User(int socket)
-	: socket_(socket), isPassed(false), hasNick(false), hasUser(false), isRegistered(false) {}
+	: socket_(socket), isPassed(false), hasNick(false), hasUser(false), isRegistered(false), isEnd(false) {}
 
 User::User(const User &user)
 {
@@ -121,3 +121,13 @@ void User::setRealName(const std::string &name)
 {
 	this->realName_ = name;
 }
+
+bool User::getIsEnd() const
+{
+	return isEnd;
+}
+
+void User::endCilent()
+{
+	isEnd = true;
+};
