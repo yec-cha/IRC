@@ -65,7 +65,7 @@ void CmdManager::exeCmd(std::string msg, std::vector<User>::iterator &user)
 	// }
 	// std::cout << "----------------------------------\n";
 	
-	// std::cout << "command : " << command << std::endl;
+	// std::cout << user->getIsRegistered() << std::endl;
 
 	if (!user->getIsRegistered())
 	{
@@ -97,9 +97,10 @@ void CmdManager::cmd_NICK(const std::vector<std::string> &parameters, std::vecto
 
 	if (iter->getHasNick())
 	{
-		const std::string response = iter->getNickName() + " NICK " + parameters[0] + "\n";
+		// const std::string response = ":" + iter->getNickName() + " NICK " + parameters[0] + "\n";
+		const std::string response = "NICK " + parameters[0] + "\n";
 		iter->setNickName(parameters[0]);
-		send(iter->getSocket(), response.c_str(), response.length(), 0);
+		sendClient(iter->getSocket(), response);
 	}
 	else
 	{
@@ -122,7 +123,7 @@ void CmdManager::cmd_USER(const std::vector<std::string> &parameters, std::vecto
 		iter->setServerName(parameters[2]);
 		iter->setRealName(parameters[3]);
 
-		std::cout << iter->getSocket() << ": set USER\n";
+		std::cout << iter->getSocket() << " : set USER\n";
 	}
 }
 
@@ -160,17 +161,37 @@ void CmdManager::beforeRegisteredMsg(std::string &cmd, const std::vector<std::st
 	if (iter->getIsRegistered())
 	{
 		sendClient(iter->getSocket(), "001 " + iter->getNickName() + " :Welcome to the Internet Relay Network\n");	
-		sendClient(iter->getSocket(), ("002 :Your host is ft_irc, running version 1\n"));
-		sendClient(iter->getSocket(), ("003 :This server was created 2022.3.18\n"));
-		sendClient(iter->getSocket(), ("004 :ft_irc 1 +i +i\n"));
-		sendClient(iter->getSocket(), ("Mode " + iter->getNickName() + " +i\n"));
+		sendClient(iter->getSocket(), "002 " + iter->getNickName() +  " :Your host is ft_irc, running version 1\n");
+		sendClient(iter->getSocket(), "003 " + iter->getNickName() +  " :This server was created 2022.3.18\n");
+		sendClient(iter->getSocket(), "004 " + iter->getNickName() +  " :ft_irc 1 +i +i\n");
+		sendClient(iter->getSocket(), "Mode " + iter->getNickName() + " +i\n");
 	}
 };
 
 void CmdManager::afterRegisteredMsg(std::string &cmd, const std::vector<std::string> &parameters, std::vector<User>::iterator &iter)
 {
+	if (cmd == "PING")
+	{
+		if (parameters.size() < 1)
+			ErrManager::send_409(iter->getSocket());
+		else
+		{
+			sendClient(iter->getSocket(), "PONG " + parameters[0]);
+		}
+	}
 	if (cmd == "NICK")
 	{
-		std::cout << iter->getSocket() << ":" << *parameters.begin() << std::endl;
+		cmd_NICK(parameters, iter);
+	}
+	if (cmd == "QUIT")
+	{
+		std::string quitMsg = "QUIT :";
+		iter->endCilent();
+		
+		if (parameters.size() > 0)
+			quitMsg = quitMsg + parameters[0];
+		else
+			quitMsg = quitMsg + "good bye :)\n";
+		sendClient(iter->getSocket(), quitMsg);
 	}
 };

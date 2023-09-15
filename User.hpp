@@ -8,6 +8,7 @@
 class User {
 private:
 	int socket_;
+
 	std::string nickName_;
 	std::string userName_;
 	std::string hostName_;
@@ -18,6 +19,7 @@ private:
 	bool hasNick;
 	bool hasUser;
 	bool isRegistered;
+	bool isEnd;
 
 	User();
 
@@ -38,11 +40,13 @@ public:
 	bool getHasNick() const;
 	bool getHasUser() const;
 	bool getIsRegistered() const;
+	bool getIsEnd() const;
 
 	void setIsPassed(bool flag);
 	void setHasNick(bool flag);
 	void setHasUser(bool flag);
 	void setIsRegistered(bool flag);
+	void endCilent();
 	
 	void setNickName(const std::string& name);
 	void setUserName(const std::string& name);
