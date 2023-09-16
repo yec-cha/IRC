@@ -194,4 +194,18 @@ void CmdManager::afterRegisteredMsg(std::string &cmd, const std::vector<std::str
 			quitMsg = quitMsg + "good bye :)\n";
 		sendClient(iter->getSocket(), quitMsg);
 	}
+	if (cmd == "JOIN")
+	{
+		// std::cout << "[TEST] Join ----------------" << std::endl;
+		// std::cout << "cmd: " << cmd << std::endl;
+		// for (size_t i = 0; i < parameters.size(); ++i)
+		// 	std::cout << "params: " << parameters[i] << std::endl;
+		// std::cout << "----------------------" << std::endl;
+
+		cmd_JOIN(parameters, iter);
+
+		// std::cout << "[TEST] Join ----------------" << std::endl;
+	}
+	if (cmd == "PRIVMSG")
+		cmd_PRIVMSG(parameters, iter);
 };
