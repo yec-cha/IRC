@@ -45,7 +45,7 @@ public:
 
 	void cmd_JOIN(std::vector<std::string> const &parameters, std::vector<User>::iterator &iterUser) {
 		std::vector<Channel>::iterator iterChannel = this->channels.begin();
-		printInfo(parameters, iterUser);
+		// printInfo(parameters, iterUser);
 		for (; iterChannel < this->channels.end(); ++iterChannel) {
 			if (iterChannel->getName() == parameters[0]) {
 				// std::cout << "params: " << parameters[0] << std::endl;
