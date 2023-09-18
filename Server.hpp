@@ -14,6 +14,7 @@
 #include "Channel.hpp"
 #include "CmdManager.hpp"
 
+#define VERSION "0.1"
 const int MAX_CONNECTIONS = 10;
 
 class User;

@@ -1,4 +1,5 @@
 #include "CmdManager.hpp"
+#include "Server.hpp"
 
 void CmdManager::sendClient(int socket, const std::string msg)
 {
@@ -85,26 +86,26 @@ void CmdManager::cmd_NICK(const std::vector<std::string> &parameters, std::vecto
 	}
 	// if ()
 	//	ErrManager::send_432(iter->getSocket(), iter->getNickName());
-	for (std::vector<User>::iterator iter = users.begin(); iter != users.end(); iter++)
+	for (std::vector<User>::iterator it = users.begin(); it != users.end(); it++)
 	{
-		if (iter->getNickName() == *parameters.begin())
+		if (it->getNickName() == *parameters.begin())
 		{
-			ErrManager::send_433(iter->getSocket(), iter->getNickName());
+			ErrManager::send_433(iter->getSocket(), iter->getNickName(), *parameters.begin());
 			return;
 		}
 	}
 
 	if (iter->getHasNick())
 	{
-		const std::string response = ":" + iter->getNickName() + " NICK " + parameters[0] + "\n";
+		const std::string response = ":ft_IRC NICK " + parameters[0] + "\n";
 		// const std::string response = "NICK " + parameters[0] + "\n";
 		iter->setNickName(parameters[0]);
 		sendClient(iter->getSocket(), response);
 	}
 	else
 	{
+		const std::string response2 = "NICK " + parameters[0] + "\n";
 		iter->setNickName(parameters[0]);
-
 		std::cout << iter->getSocket() << ": set NICK to [" << parameters[0] << "] \n";
 	}
 }
@@ -153,17 +154,23 @@ void CmdManager::beforeRegisteredMsg(std::string &cmd, const std::vector<std::st
 	else if (cmd == "USER")
 		cmd_USER(parameters, iter);
 	else if (cmd == "CAP")
-		;
+	{
+		if (parameters.size() > 0)
+			if (*parameters.begin() != "END")
+				sendClient(iter->getSocket(), "CAP * LS :\n");
+	}
 	else
 		ErrManager::send_451(iter->getSocket());
 
 	if (iter->getIsRegistered())
 	{
-		sendClient(iter->getSocket(), "001 " + iter->getNickName() + " :Welcome to the Internet Relay Network\n");
-		sendClient(iter->getSocket(), "002 " + iter->getNickName() + " :Your host is ft_irc, running version 1\n");
-		sendClient(iter->getSocket(), "003 " + iter->getNickName() + " :This server was created 2022.3.18\n");
-		sendClient(iter->getSocket(), "004 " + iter->getNickName() + " :ft_irc 1 +i +i\n");
+		sendClient(iter->getSocket(), "001 " + iter->getNickName() + " :Welcome to the Internet Relay Network " + iter->getNickName() + "!" + iter->getUserName() + "@" + iter->getHostName() + "\n");
+		sendClient(iter->getSocket(), "002 " + iter->getNickName() + " :Your host is ft_IRC, running version " + VERSION + "\n");
+		sendClient(iter->getSocket(), "003 " + iter->getNickName() + " :This server was created 2023.09.07\n");
+		sendClient(iter->getSocket(), "004 " + iter->getNickName() + " :ft_IRC " + VERSION + "+i +i\n");
 		sendClient(iter->getSocket(), "Mode " + iter->getNickName() + " +i\n");
+
+		sendClient(iter->getSocket(), ":ft_IRC NICK " + iter->getNickName() + "\n");
 	}
 };
 
