@@ -34,8 +34,6 @@ private:
 	char buffer[532];
 	int port_;
 
-	void cmdNick(std::vector<User>::iterator &iter, std::string &msg);
-	void beforeRegisterdMsg(std::string &cmd, std::string &msg, std::vector<User>::iterator &iter);
 	void handleClient(int clientSocket);
 
 public:
