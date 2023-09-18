@@ -4,6 +4,8 @@ IRCServer::IRCServer() : cm(users, channels) {}
 
 IRCServer::IRCServer(int port) : cm(users, channels), port_(port)
 {
+	users.reserve(100);
+
 	this->serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (this->serverSocket == -1)
 	{
@@ -33,69 +35,6 @@ IRCServer::IRCServer(int port) : cm(users, channels), port_(port)
 	std::cout << "IRC Server started on port " << this->port_ << std::endl;
 }
 
-void IRCServer::cmdNick(std::vector<User>::iterator &iter, std::string &msg)
-{
-	std::string response;
-
-	if (iter->getIsRegistered())
-	{
-		if (iter->getIsPassed())
-		{
-			iter->setNickName(msg);
-		}
-	}
-	else
-	{
-		response = ":yecnam NICK hi\n";
-		send(iter->getSocket(), response.c_str(), response.length(), 0);
-	}
-}
-
-void IRCServer::beforeRegisterdMsg(std::string &cmd, std::string &msg, std::vector<User>::iterator &iter)
-{
-	std::string response;
-
-	if (cmd == "NICK")
-	{
-		cmdNick(iter, msg);
-	}
-	else if (cmd == "PASS")
-	{
-		iter->setIsPassed(true);
-	}
-	else if (cmd == "USER")
-	{
-		iter->setIsRegistered(true);
-	}
-	else if (cmd == "CAP")
-	{
-		;
-	}
-	else
-	{
-		response = "451 : client must be registered\n";
-		send(iter->getSocket(), response.c_str(), response.length(), 0);
-	}
-
-	if (iter->getIsRegistered())
-	{
-		response = "001 yecnam :Welcome to the Internet Relay Network yecnam!yecnam@yecnam\n";
-		send(iter->getSocket(), response.c_str(), response.length(), 0);
-
-		response = "002 :Your host is ft_irc, running version 1\n";
-		send(iter->getSocket(), response.c_str(), response.length(), 0);
-
-		response = "003 :This server was created 2022.3.18\n";
-		send(iter->getSocket(), response.c_str(), response.length(), 0);
-
-		response = "004 :ft_irc 1 +i +i\n";
-		send(iter->getSocket(), response.c_str(), response.length(), 0);
-
-		response = "Mode yecnam +i\n";
-		send(iter->getSocket(), response.c_str(), response.length(), 0);
-	}
-}
-
 void IRCServer::handleClient(int clientSocket)
 {
 	struct pollfd tmp;
@@ -105,8 +44,19 @@ void IRCServer::handleClient(int clientSocket)
 
 	pollfds.push_back(tmp);
 
-	User newUser(clientSocket);
-	users.push_back(newUser);
+	std::cout << RED << users.size() << RESET << std::endl;
+	for (size_t i = 0; i < users.size(); i++)
+	{
+		users[i].getMyState();
+	}
+
+	User newuser(clientSocket);
+	users.push_back(newuser);
+	std::cout << RED << users.size() << RESET << std::endl;
+	for (size_t i = 0; i < users.size(); i++)
+	{
+		users[i].getMyState();
+	}
 
 	std::cout << clientSocket << " : Client connected." << std::endl;
 }
@@ -136,6 +86,11 @@ void IRCServer::acceptConnections()
 
 		if (pollfds[0].revents & POLLIN)
 		{
+			for (size_t i = 0; i < users.size(); i++)
+			{
+				std::cout << "start : ";
+				users[i].getMyState();
+			}
 			clientSocket = accept(serverSocket, (struct sockaddr *)&clientAddr, (socklen_t *)&clientLen);
 			if (clientSocket == -1)
 			{
@@ -150,6 +105,11 @@ void IRCServer::acceptConnections()
 			memset(buffer, 0, 532);
 			if (iter->fd > 0 && iter->revents & POLLIN)
 			{
+				for (size_t i = 0; i < users.size(); i++)
+				{
+					users[i].getMyState();
+				}
+
 				ssize_t bytesRead = recv(iter->fd, buffer, sizeof(buffer), 0);
 				if (bytesRead <= 0)
 				{
@@ -169,7 +129,7 @@ void IRCServer::acceptConnections()
 						cm.exeCmd(oneMsg, iterUser);
 					}
 				}
-				
+
 				if (iterUser->getIsEnd())
 				{
 					std::cout << iter->fd << RED " CLIENT END" RESET << "\n\n";

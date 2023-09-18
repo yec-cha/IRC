@@ -14,6 +14,7 @@
 #include "Channel.hpp"
 #include "CmdManager.hpp"
 
+#define VERSION "0.1"
 const int MAX_CONNECTIONS = 10;
 
 class User;
@@ -34,8 +35,6 @@ private:
 	char buffer[532];
 	int port_;
 
-	void cmdNick(std::vector<User>::iterator &iter, std::string &msg);
-	void beforeRegisterdMsg(std::string &cmd, std::string &msg, std::vector<User>::iterator &iter);
 	void handleClient(int clientSocket);
 
 public:
