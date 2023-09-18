@@ -45,7 +45,11 @@ public:
 
 	static void send_433(int socket, const std::string &nick, const std::string &newNick)
 	{
-		const std::string response = "433 " + nick + " " + newNick + " :Nickname is already in use\n";
+		std::string response;
+		if (nick == "")
+			response = "433 anonymous " + newNick + " :Nickname is already in use\n";
+		else
+			response = "433 " + nick + " " + newNick + " :Nickname is already in use\n";
 		sendClient(socket, response);
 	};
 
