@@ -132,22 +132,48 @@ public:
 	// 	this->sendAll_(join.c_str(), 0);
 	// }
 
+
+	// PRIVMSG target text
+	// Command: PRIVMSG
+  	// Parameters: <target>{,<target>} <text to be sent>
+	
+	
+	// std::string PRIVMSG(int target, std::string text) {
+	// 	std::string privmsg = ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + "127.0.0.1" + " " + "PRIVMSG" + " " + parameters[0] + " " + parameters[1] + "\n";
+	// 	this->send_(target, )
+	// 	<target>{,<target>} <text to be sent>
+	// }
+
 	void sendPRIVMSG(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) {
-		(void)iterUser;
+		// (void)iterUser;
 		// std::map<int, User&>::iterator first_ = users_.begin();
 		// std::map<int, User&>::iterator last_ = users_.end();
 		// for (; first_ != last_ < ++first_) {
 		// 	send(first_->first, parameters[1].c_str(), parameters[1].length(), 0);
 		// }
 		// std::string messages;
-		this->printInfo();
+		// this->printInfo();
 		// for (std::map<int, User&>::iterator iter = this->users_.begin(); iter != this->users_.end(); ++iter) {
 		// 	// std::string messages = parameters[1];
 		// 	send(iter->first, parameters[1].c_str(), parameters[1].length(), 0);
 		// }
+
+
+		// :Angel!wings@irc.org PRIVMSG Wiz :Are you receiving this message ?
+		//                               ; Message from Angel to Wiz.
 		for (std::map<int, User&>::iterator iter = this->users_.begin(); iter != this->users_.end(); ++iter) {
-			std::string privmsg = ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + "127.0.0.1" + " " + "PRIVMSG" + " " + parameters[0] + " " + parameters[1] + "\n";
-			send(iter->first, privmsg.c_str(), privmsg.length(), 0);
+			// std::string privmsg = ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + "127.0.0.1" + " " + "PRIVMSG" + " " + parameters[0] + " " + parameters[1] + "\n";
+			if (iterUser->getSocket() != iter->first) {
+				// std::cout << "parameters[0]: " << parameters[0] << std::endl;
+				// std::cout << "parameters[1]: " << parameters[1] << std::endl;
+				// std::string privmsg = ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + "127.0.0.1" + " " + "PRIVMSG " + parameters[0] + " :" + parameters[1] + "\n";
+				std::string privmsg = ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + "127.0.0.1" + " " + "PRIVMSG " + parameters[0] + " :" + parameters[1] + "\n";
+				// std::string privmsg = "PRIVMSG " + parameters[0] + " " + parameters[1] + "\n";
+				// std::string privmsg = "PRIVMSG " + iter->second.getNickName() + " " + parameters[1] + "\n";
+
+				this->send_(iter->first, privmsg, 0);
+				// send(iter->first, privmsg.c_str(), privmsg.length(), 0);
+			}
 		}
 	}
 

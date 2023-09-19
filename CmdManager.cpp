@@ -145,6 +145,7 @@ void CmdManager::cmd_PASS(const std::vector<std::string> &parameters, std::deque
 	else
 	{
 		ErrManager::send_464(iter->getSocket());
+		iter->endCilent();
 	}
 }
 

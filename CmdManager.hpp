@@ -57,6 +57,7 @@ public:
 				// std::cout << "params: " << parameters[0] << std::endl;
 				// std::cout << "iter: " << iterChannel->getName() << std::endl;
 				iterChannel->addUser(*iterUser);
+				break ;
 				// std::cout << "already exist" << std::endl;
 			}
 		}
@@ -64,12 +65,13 @@ public:
 		{
 			Channel newChannel(parameters[0], *iterUser);
 			this->channels.push_back(newChannel);
+
+			iterChannel = channels.end() - 1;
 			// std::vector<Channel>::iterator test = this->channels.begin();
 			// test->printInfo();
 			// std::cout << "make new one" << std::endl;
 		}
-		std::vector<Channel>::iterator test = this->channels.begin();
-		test->welcomeChannel(iterUser);
+		iterChannel->welcomeChannel(iterUser);
 		// std::cout << "make new one" << std::endl;
 		// std::cout << "[TEST 2]channel list -------" << std::endl;
 		// for (std::vector<Channel>::iterator test = this->channels.begin(); test < this->channels.end(); ++test) {
