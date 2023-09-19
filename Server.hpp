@@ -9,7 +9,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <poll.h>
-
+#include <deque>
 #include "User.hpp"
 #include "Channel.hpp"
 #include "CmdManager.hpp"
@@ -26,7 +26,7 @@ class IRCServer
 private:
 	int serverSocket;
 	struct sockaddr_in serverAddress, clientAddr;
-	std::vector<User> users;
+	std::deque<User> users;
 	std::vector<Channel> channels;
 	// struct pollfd pollfds[MAX_CONNECTIONS];
 	std::vector<struct pollfd> pollfds;

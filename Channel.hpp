@@ -7,6 +7,7 @@
 # include <string>
 # include <sys/socket.h>
 # include <vector>
+#include <deque>
 
 class Channel {
 private:
@@ -82,7 +83,7 @@ public:
 		20:18 [@chanmukjung]
 		20:18 -!- Irssi: #testroom: Total of 1 nicks [1 ops, 0 halfops, 0 voices, 0 normal]	*/
 	
-	void welcomeChannel(std::vector<User>::iterator& iterUser) {
+	void welcomeChannel(std::deque<User>::iterator& iterUser) {
 		std::string JOIN = ":" + iterUser->getNickName() + "!" + iterUser->getNickName() + "@" + "127.0.0.1" + " " + "JOIN" +  " " + this->name_ + "\n";
 		this->sendAll_(JOIN, 0);
 
@@ -124,14 +125,14 @@ public:
 
 
 
-	// void welcomeChannel(std::vector<User>::iterator& iterUser) {
+	// void welcomeChannel(std::deque<User>::iterator& iterUser) {
 	// 	printInfo();
 	// 	std::string join = ":" + iterUser->getNickName() + "!" + iterUser->getNickName() + "@" + "127.0.0.1" + " " + "JOIN" +  " " + this->name_ + "\n";
 	// 	// send(4, join.c_str(), join.length(), 0);
 	// 	this->sendAll_(join.c_str(), 0);
 	// }
 
-	void sendPRIVMSG(const std::vector<std::string>& parameters, std::vector<User>::iterator& iterUser) {
+	void sendPRIVMSG(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) {
 		(void)iterUser;
 		// std::map<int, User&>::iterator first_ = users_.begin();
 		// std::map<int, User&>::iterator last_ = users_.end();
