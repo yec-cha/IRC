@@ -4,7 +4,7 @@ IRCServer::IRCServer() : cm(users, channels, pass) {}
 
 IRCServer::IRCServer(int port, const std::string _pass) : cm(users, channels, pass), port_(port), pass(_pass)
 {
-	users.reserve(1024);
+	//users.reserve(1024);
 
 	this->serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (this->serverSocket == -1)
@@ -71,7 +71,7 @@ void IRCServer::acceptConnections()
 	int clientLen = sizeof(clientAddr);
 	int clientSocket;
 	int pollResult;
-	std::vector<User>::iterator iterUser;
+	std::deque<User>::iterator iterUser;
 	std::vector<struct pollfd>::iterator iter;
 
 	while (true)

@@ -11,11 +11,11 @@ void CmdManager::sendClient(int socket, const std::string msg)
 	std::cout << "server (to " << socket << ") : " << BLUE << msg << RESET << std::endl;
 };
 
-CmdManager::CmdManager(std::vector<User> &_users, std::vector<Channel> &_channels, const std::string &_pass) : users(_users), channels(_channels), pass(_pass){};
+CmdManager::CmdManager(std::deque<User> &_users, std::vector<Channel> &_channels, const std::string &_pass) : users(_users), channels(_channels), pass(_pass){};
 
 CmdManager::~CmdManager(){};
 
-void CmdManager::exeCmd(std::string msg, std::vector<User>::iterator &user)
+void CmdManager::exeCmd(std::string msg, std::deque<User>::iterator &user)
 {
 	(void)channels;
 	std::string command;
@@ -77,7 +77,7 @@ void CmdManager::exeCmd(std::string msg, std::vector<User>::iterator &user)
 	}
 };
 
-void CmdManager::cmd_NICK(const std::vector<std::string> &parameters, std::vector<User>::iterator &iter)
+void CmdManager::cmd_NICK(const std::vector<std::string> &parameters, std::deque<User>::iterator &iter)
 {
 	if (!iter->getIsPassed())
 		return;
@@ -88,7 +88,7 @@ void CmdManager::cmd_NICK(const std::vector<std::string> &parameters, std::vecto
 	}
 	// if ()
 	//	ErrManager::send_432(iter->getSocket(), iter->getNickName());
-	for (std::vector<User>::iterator it = users.begin(); it != users.end(); it++)
+	for (std::deque<User>::iterator it = users.begin(); it != users.end(); it++)
 	{
 		if (it->getNickName() == *parameters.begin())
 		{
@@ -112,7 +112,7 @@ void CmdManager::cmd_NICK(const std::vector<std::string> &parameters, std::vecto
 	}
 }
 
-void CmdManager::cmd_USER(const std::vector<std::string> &parameters, std::vector<User>::iterator &iter)
+void CmdManager::cmd_USER(const std::vector<std::string> &parameters, std::deque<User>::iterator &iter)
 {
 	if (!iter->getIsPassed())
 		return;
@@ -132,7 +132,7 @@ void CmdManager::cmd_USER(const std::vector<std::string> &parameters, std::vecto
 	}
 }
 
-void CmdManager::cmd_PASS(const std::vector<std::string> &parameters, std::vector<User>::iterator &iter)
+void CmdManager::cmd_PASS(const std::vector<std::string> &parameters, std::deque<User>::iterator &iter)
 {
 	if (parameters.size() < 1)
 		ErrManager::send_461(iter->getSocket(), "PASS");
@@ -148,7 +148,7 @@ void CmdManager::cmd_PASS(const std::vector<std::string> &parameters, std::vecto
 	}
 }
 
-void CmdManager::beforeRegisteredMsg(std::string &cmd, const std::vector<std::string> &parameters, std::vector<User>::iterator &iter)
+void CmdManager::beforeRegisteredMsg(std::string &cmd, const std::vector<std::string> &parameters, std::deque<User>::iterator &iter)
 {
 	if (cmd == "PASS")
 		cmd_PASS(parameters, iter);
@@ -177,7 +177,7 @@ void CmdManager::beforeRegisteredMsg(std::string &cmd, const std::vector<std::st
 	}
 };
 
-void CmdManager::afterRegisteredMsg(std::string &cmd, const std::vector<std::string> &parameters, std::vector<User>::iterator &iter)
+void CmdManager::afterRegisteredMsg(std::string &cmd, const std::vector<std::string> &parameters, std::deque<User>::iterator &iter)
 {
 	if (cmd == "PING")
 	{
@@ -185,7 +185,7 @@ void CmdManager::afterRegisteredMsg(std::string &cmd, const std::vector<std::str
 			ErrManager::send_409(iter->getSocket());
 		else
 		{
-			sendClient(iter->getSocket(), "PONG " + parameters[0]);
+			sendClient(iter->getSocket(), "PONG " + parameters[0] + "\n");
 		}
 	}
 	if (cmd == "NICK")

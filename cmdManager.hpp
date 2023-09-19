@@ -8,29 +8,30 @@
 #include "color.hpp"
 #include <vector>
 #include <string>
+#include <deque>
 
 class CmdManager
 {
 private:
-	std::vector<User> &users;
+	std::deque<User> &users;
 	std::vector<Channel> &channels;
 	const std::string &pass;
 
 	void sendClient(int socket, const std::string msg);
 
 public:
-	CmdManager(std::vector<User> &_users, std::vector<Channel> &_channels, const std::string &_pass);
+	CmdManager(std::deque<User> &_users, std::vector<Channel> &_channels, const std::string &_pass);
 	~CmdManager();
 
-	void exeCmd(std::string msg, std::vector<User>::iterator &user);
+	void exeCmd(std::string msg, std::deque<User>::iterator &user);
 
-	void cmd_NICK(std::vector<std::string> const &parameters, std::vector<User>::iterator &iter);
-	void cmd_USER(std::vector<std::string> const &parameters, std::vector<User>::iterator &iter);
-	void cmd_PASS(std::vector<std::string> const &parameters, std::vector<User>::iterator &iter);
-	void beforeRegisteredMsg(std::string &cmd, std::vector<std::string> const &parameters, std::vector<User>::iterator &iter);
-	void afterRegisteredMsg(std::string &cmd, std::vector<std::string> const &parameters, std::vector<User>::iterator &iter);
+	void cmd_NICK(std::vector<std::string> const &parameters, std::deque<User>::iterator &iter);
+	void cmd_USER(std::vector<std::string> const &parameters, std::deque<User>::iterator &iter);
+	void cmd_PASS(std::vector<std::string> const &parameters, std::deque<User>::iterator &iter);
+	void beforeRegisteredMsg(std::string &cmd, std::vector<std::string> const &parameters, std::deque<User>::iterator &iter);
+	void afterRegisteredMsg(std::string &cmd, std::vector<std::string> const &parameters, std::deque<User>::iterator &iter);
 
-	void printInfo(std::vector<std::string> const &parameters, std::vector<User>::iterator &iterUser) const
+	void printInfo(std::vector<std::string> const &parameters, std::deque<User>::iterator &iterUser) const
 	{
 		std::cout << "[INFO]" << std::endl;
 		std::cout << "USER NAME: " << iterUser->getUserName() << std::endl;
@@ -45,7 +46,7 @@ public:
 		std::cout << "[INFO]" << std::endl;
 	}
 
-	void cmd_JOIN(std::vector<std::string> const &parameters, std::vector<User>::iterator &iterUser)
+	void cmd_JOIN(std::vector<std::string> const &parameters, std::deque<User>::iterator &iterUser)
 	{
 		std::vector<Channel>::iterator iterChannel = this->channels.begin();
 		// printInfo(parameters, iterUser);
@@ -77,7 +78,7 @@ public:
 		// std::cout << "[TEST 2]channel list -------" << std::endl;
 	}
 
-	void cmd_PRIVMSG(std::vector<std::string> const &parameters, std::vector<User>::iterator &iterUser)
+	void cmd_PRIVMSG(std::vector<std::string> const &parameters, std::deque<User>::iterator &iterUser)
 	{
 		// (void)iterUser;
 		// std::cout << "[TEST 1] PRIVMSG -------------------" << std::endl;
