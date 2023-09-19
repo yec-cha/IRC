@@ -54,6 +54,10 @@ int checkArguments(int argc, char** argv) {
     int result = std::atoi(argv[1]);
     if (result == 0)
         return -1; // need to add
+
+	std::string pass(argv[2]);
+	if (pass.size() <= 0)
+		return -1;
     return result;
 }
 
@@ -62,7 +66,7 @@ int main(int argc, char** argv) {
     if (port == -1)
         return 1;
     
-    IRCServer server(port);
+    IRCServer server(port, argv[2]);
 	server.acceptConnections();
 	return 0;
 }

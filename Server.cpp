@@ -1,10 +1,10 @@
 #include "Server.hpp"
 
-IRCServer::IRCServer() : cm(users, channels) {}
+IRCServer::IRCServer() : cm(users, channels, pass) {}
 
-IRCServer::IRCServer(int port) : cm(users, channels), port_(port)
+IRCServer::IRCServer(int port, const std::string _pass) : cm(users, channels, pass), port_(port), pass(_pass)
 {
-	users.reserve(100);
+	users.reserve(1024);
 
 	this->serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (this->serverSocket == -1)
@@ -51,8 +51,13 @@ void IRCServer::handleClient(int clientSocket)
 	}
 
 	User newuser(clientSocket);
+
+	std::cout << BLUE << newuser.getIsRegistered() << RESET << std::endl;
+
 	users.push_back(newuser);
+
 	std::cout << RED << users.size() << RESET << std::endl;
+
 	for (size_t i = 0; i < users.size(); i++)
 	{
 		users[i].getMyState();
@@ -98,6 +103,7 @@ void IRCServer::acceptConnections()
 				continue;
 			}
 			handleClient(clientSocket);
+			std::cout << BLUE << users.size() << " " << users[0].getIsPassed() << RESET << std::endl;
 		}
 
 		for (iter = pollfds.begin() + 1, iterUser = users.begin(); (iter != pollfds.end()) && (iterUser != users.end()); iter++, iterUser++)
@@ -136,7 +142,6 @@ void IRCServer::acceptConnections()
 					close(iter->fd);
 					pollfds.erase(iter);
 					users.erase(iterUser);
-
 					std::cout << "remain clients :" << users.size() << " " << pollfds.size() << std::endl;
 					break;
 				}
