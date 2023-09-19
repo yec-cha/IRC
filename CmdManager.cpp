@@ -11,7 +11,7 @@ void CmdManager::sendClient(int socket, const std::string msg)
 	std::cout << "server (to " << socket << ") : " << BLUE << msg << RESET << std::endl;
 };
 
-CmdManager::CmdManager(std::vector<User> &_users, std::vector<Channel> &_channels) : users(_users), channels(_channels){};
+CmdManager::CmdManager(std::vector<User> &_users, std::vector<Channel> &_channels, const std::string &_pass) : users(_users), channels(_channels), pass(_pass){};
 
 CmdManager::~CmdManager(){};
 
@@ -79,6 +79,8 @@ void CmdManager::exeCmd(std::string msg, std::vector<User>::iterator &user)
 
 void CmdManager::cmd_NICK(const std::vector<std::string> &parameters, std::vector<User>::iterator &iter)
 {
+	if (!iter->getIsPassed())
+		return;
 	if (parameters.size() < 1)
 	{
 		ErrManager::send_431(iter->getSocket());
@@ -97,14 +99,14 @@ void CmdManager::cmd_NICK(const std::vector<std::string> &parameters, std::vecto
 
 	if (iter->getHasNick())
 	{
-		const std::string response = ":ft_IRC NICK " + parameters[0] + "\n";
-		// const std::string response = "NICK " + parameters[0] + "\n";
+		// const std::string response = ":ft_IRC NICK " + parameters[0] + " :changed name\n";
+		//: 이전닉네임!사용자@호스트 NICK :새로운닉네임
+		const std::string response = ":" + iter->getNickName() + "!" + iter->getUserName() + "@" + iter->getHostName() + " NICK :" + parameters[0] + "\r\n";
 		iter->setNickName(parameters[0]);
 		sendClient(iter->getSocket(), response);
 	}
 	else
 	{
-		const std::string response2 = "NICK " + parameters[0] + "\n";
 		iter->setNickName(parameters[0]);
 		std::cout << iter->getSocket() << ": set NICK to [" << parameters[0] << "] \n";
 	}
@@ -112,6 +114,9 @@ void CmdManager::cmd_NICK(const std::vector<std::string> &parameters, std::vecto
 
 void CmdManager::cmd_USER(const std::vector<std::string> &parameters, std::vector<User>::iterator &iter)
 {
+	if (!iter->getIsPassed())
+		return;
+
 	if (parameters.size() < 4)
 		ErrManager::send_461(iter->getSocket(), "USER");
 	else if (iter->getHasUser())
@@ -129,28 +134,26 @@ void CmdManager::cmd_USER(const std::vector<std::string> &parameters, std::vecto
 
 void CmdManager::cmd_PASS(const std::vector<std::string> &parameters, std::vector<User>::iterator &iter)
 {
-	iter->setIsPassed(true);
-	return;
-
 	if (parameters.size() < 1)
 		ErrManager::send_461(iter->getSocket(), "PASS");
-	else if (iter->getHasUser())
+	else if (iter->getIsPassed())
 		ErrManager::send_462(iter->getSocket());
+	else if (parameters[0] == pass)
+	{
+		iter->setIsPassed(true);
+	}
 	else
 	{
-		iter->setUserName(parameters[0]);
-		iter->setHostName(parameters[1]);
-		iter->setServerName(parameters[2]);
-		iter->setRealName(parameters[3]);
+		ErrManager::send_464(iter->getSocket());
 	}
 }
 
 void CmdManager::beforeRegisteredMsg(std::string &cmd, const std::vector<std::string> &parameters, std::vector<User>::iterator &iter)
 {
-	if (cmd == "NICK")
-		cmd_NICK(parameters, iter);
-	else if (cmd == "PASS")
+	if (cmd == "PASS")
 		cmd_PASS(parameters, iter);
+	else if (cmd == "NICK")
+		cmd_NICK(parameters, iter);
 	else if (cmd == "USER")
 		cmd_USER(parameters, iter);
 	else if (cmd == "CAP")
@@ -167,7 +170,7 @@ void CmdManager::beforeRegisteredMsg(std::string &cmd, const std::vector<std::st
 		sendClient(iter->getSocket(), "001 " + iter->getNickName() + " :Welcome to the Internet Relay Network " + iter->getNickName() + "!" + iter->getUserName() + "@" + iter->getHostName() + "\n");
 		sendClient(iter->getSocket(), "002 " + iter->getNickName() + " :Your host is ft_IRC, running version " + VERSION + "\n");
 		sendClient(iter->getSocket(), "003 " + iter->getNickName() + " :This server was created 2023.09.07\n");
-		sendClient(iter->getSocket(), "004 " + iter->getNickName() + " :ft_IRC " + VERSION + "+i +i\n");
+		sendClient(iter->getSocket(), "004 " + iter->getNickName() + " :ft_IRC " + VERSION + " +i +i\n");
 		sendClient(iter->getSocket(), "Mode " + iter->getNickName() + " +i\n");
 
 		sendClient(iter->getSocket(), ":ft_IRC NICK " + iter->getNickName() + "\n");

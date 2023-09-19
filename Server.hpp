@@ -35,11 +35,13 @@ private:
 	char buffer[532];
 	int port_;
 
+	const std::string pass;
+
 	void handleClient(int clientSocket);
 
 public:
 	IRCServer();
-	IRCServer(int port);
+	IRCServer(int port, const std::string _pass);
 
 	void acceptConnections();
 };

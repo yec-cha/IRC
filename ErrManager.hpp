@@ -70,4 +70,17 @@ public:
 		const std::string response = "462 :You may not reregister\n";
 		sendClient(socket, response);
 	};
+
+	static void send_421(int socket, const std::string &cmd)
+	{
+		const std::string response = "421 " + cmd + " :Unknown command\n";
+		sendClient(socket, response);
+	};
+
+	static void send_464(int socket)
+	{
+		const std::string response = "464 :Password incorrect\n";
+		sendClient(socket, response);
+	};
+
 };
