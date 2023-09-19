@@ -48,28 +48,88 @@ public:
 
 	void cmd_JOIN(std::vector<std::string> const &parameters, std::deque<User>::iterator &iterUser)
 	{
-		std::vector<Channel>::iterator iterChannel = this->channels.begin();
-		// printInfo(parameters, iterUser);
-		for (; iterChannel < this->channels.end(); ++iterChannel)
+		if (parameters.size() < 1)
 		{
-			if (iterChannel->getName() == parameters[0])
-			{
-				// std::cout << "params: " << parameters[0] << std::endl;
-				// std::cout << "iter: " << iterChannel->getName() << std::endl;
-				iterChannel->addUser(*iterUser);
-				// std::cout << "already exist" << std::endl;
+			ErrManager::send_461(iterUser->getSocket(), "JOIN");
+			return ;
+		}
+		
+		std::map<std::string, std::string> channelList;
+	
+		std::vector<std::string> channelName;
+		std::vector<std::string> key;
+
+		std::istringstream ssName(parameters[0]);
+		std::string token;
+		
+		while (std::getline(ssName, token, ','))
+		{    
+			if (!token.empty())
+				channelName.push_back(token);
+    	}
+		
+		if (parameters.size() >= 2)
+		{
+			std::istringstream ssKey(parameters[1]);
+			std::string token2;
+			while (std::getline(ssKey, token2, ','))
+			{    
+				if (!token2.empty())
+					key.push_back(token);
 			}
 		}
-		if (iterChannel == this->channels.end())
+
+		std::pair<std::string, std::string> tmp;
+		for (size_t i = 0; i < channelName.size(); i++)
 		{
-			Channel newChannel(parameters[0], *iterUser);
-			this->channels.push_back(newChannel);
-			// std::vector<Channel>::iterator test = this->channels.begin();
-			// test->printInfo();
-			// std::cout << "make new one" << std::endl;
+			tmp.first = channelName[i];
+			if (i < key.size())
+				tmp.second = key[i];
+			else
+				tmp.second = "";
+			channelList.insert(tmp);
 		}
-		std::vector<Channel>::iterator test = this->channels.begin();
-		test->welcomeChannel(iterUser);
+
+
+		std::vector<Channel>::iterator iterChannel = channels.begin();
+
+		for (std::map<std::string, std::string>::iterator it = channelList.begin(); it != channelList.end(); it++)
+		{
+			for (iterChannel = channels.begin(); iterChannel < this->channels.end(); ++iterChannel)
+			{
+				if (iterChannel->getName() == it->first)
+				{
+					if (iterChannel->getType() == 0)
+						iterChannel->addUser(*iterUser);
+					if (iterChannel->getType() == 1)
+					{
+					 	// if (iterChannel->password_ == it->second)
+					 	// 	iterChannel->addUser(*iterUser);
+						// else
+						// 	; //bad password
+						return ; // need to fix
+					}
+					if (iterChannel->getType() == 2)
+						; //invite only msg
+					break ;
+				}
+			}
+
+			if (iterChannel == this->channels.end())
+			{
+			
+				Channel newChannel(parameters[0], *iterUser);
+				this->channels.push_back(newChannel);
+
+				iterChannel = channels.end() - 1;
+			}
+			iterChannel->welcomeChannel(iterUser);
+		}
+		
+		
+		
+		
+
 		// std::cout << "make new one" << std::endl;
 		// std::cout << "[TEST 2]channel list -------" << std::endl;
 		// for (std::vector<Channel>::iterator test = this->channels.begin(); test < this->channels.end(); ++test) {
@@ -100,6 +160,49 @@ public:
 			}
 		}
 		// std::cout << "[TEST 1] PRIVMSG -------------------" << std::endl;
+	}
+	
+	void cmd_MODE(std::vector<std::string> const &parameters, std::deque<User>::iterator &iterUser)
+	{
+		// MODE AA +i
+		// MODE #EE
+
+		// ex) /mode #4444 +i a
+		// MODE #4444 +ia
+		// parameters[0]: #4444
+		// parameters[1]: +ia
+
+		// is user mode 
+		if (parameters[0].at(0) != '#')
+			return ;
+
+		// There is no modestring
+		if (parameters.size() < 2)
+		{
+			// RPL_CHANNELMODEIS (324)
+			// RPL_CREATIONTIME (329)
+			return ;
+		}
+		
+		std::vector<Channel>::iterator iterChannel = this->channels.begin();
+		for (; iterChannel < this->channels.end(); ++iterChannel)
+		{
+			if (iterChannel->getName() == parameters[0])
+			{
+				// There is no permission
+				if (iterChannel->isOperator(*iterUser) == false) {
+					// ERR_CHANOPRIVSNEEDED (482)
+					return ;
+				}
+
+				iterChannel->mode(parameters, iterUser);
+			}
+		}
+		// Thers in no Channel
+		if (iterChannel == this->channels.end()) {
+			// ERR_NOSUCHCHANNEL (403)
+			return ;
+		}
 	}
 };
 
