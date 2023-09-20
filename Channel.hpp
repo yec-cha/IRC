@@ -1,16 +1,16 @@
 #ifndef CHANNEL_HPP
-# define CHANNEL_HPP
+#define CHANNEL_HPP
 
-# include <map>
-# include <iostream>
-# include <iterator>
-# include <string>
-# include <sys/socket.h>
-# include <vector>
-# include <deque>
-# include <sstream>
+#include <map>
+#include <iostream>
+#include <iterator>
+#include <string>
+#include <sys/socket.h>
+#include <vector>
+#include <deque>
+#include <sstream>
 
-# include "User.hpp"
+#include "User.hpp"
 
 class User;
 
@@ -30,6 +30,11 @@ private:
 	int userLimit_;
 
 public:
+	void addInvitedUser(const std::string &name)
+	{
+		invitedUser.push_back(name);
+	}
+
 	bool isInvited(User &user)
 	{
 		for (size_t i = 0; i < invitedUser.size(); i++)
@@ -65,7 +70,7 @@ public:
 		return password_;
 	}
 
-	char getType() const //수정필요
+	char getType() const // 수정필요
 	{
 		if (invite_)
 			return '@';
@@ -178,47 +183,59 @@ public:
 		채널 운영자 권한 부여/수여
 	*/
 
-	const std::string MODE(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) {
+	const std::string MODE(const std::vector<std::string> &parameters, std::deque<User>::iterator &iterUser)
+	{
 		if (parameters.size() > 2)
 			return ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + iterUser->getHostName() + " " + "MODE " + parameters[1] + " " + parameters[2] + "\n";
-		else 
+		else
 			return ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + iterUser->getHostName() + " " + "MODE " + parameters[1] + "\n";
 	}
 
-	const std::string NOTICE(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) {
+	const std::string NOTICE(const std::vector<std::string> &parameters, std::deque<User>::iterator &iterUser)
+	{
 		if (parameters.size() > 2)
 			return ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + iterUser->getHostName() + " " + "MODE " + parameters[0] + " :" + parameters[1] + " " + parameters[2] + "\n";
 		else
 			return ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + iterUser->getHostName() + " " + "MODE " + parameters[0] + " :" + parameters[1] + "\n";
 	}
 
-	void inviteMode(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) {
-		if (parameters[1].at(0) == '+') {
-			if (this->invite_ == false) {
+	void inviteMode(const std::vector<std::string> &parameters, std::deque<User>::iterator &iterUser)
+	{
+		if (parameters[1].at(0) == '+')
+		{
+			if (this->invite_ == false)
+			{
 				this->invite_ = true;
 				this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
 				this->sendAll_(this->NOTICE(parameters, iterUser), 0);
 			}
 		}
-		else if (parameters[1].at(0) == '-') {
-			if (this->invite_ == true) {
+		else if (parameters[1].at(0) == '-')
+		{
+			if (this->invite_ == true)
+			{
 				this->invite_ = false;
 				this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
 				this->sendAll_(this->NOTICE(parameters, iterUser), 0);
 			}
 		}
 	}
-	
-	void topicMode(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) {
-		if (parameters[1].at(0) == '+') {
-			if (this->topic_ == false) {
+
+	void topicMode(const std::vector<std::string> &parameters, std::deque<User>::iterator &iterUser)
+	{
+		if (parameters[1].at(0) == '+')
+		{
+			if (this->topic_ == false)
+			{
 				this->topic_ = true;
 				this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
 				this->sendAll_(this->NOTICE(parameters, iterUser), 0);
 			}
 		}
-		else if (parameters[1].at(0) == '-') {
-			if (this->topic_ == true) {
+		else if (parameters[1].at(0) == '-')
+		{
+			if (this->topic_ == true)
+			{
 				this->topic_ = false;
 				this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
 				this->sendAll_(this->NOTICE(parameters, iterUser), 0);
@@ -226,33 +243,41 @@ public:
 		}
 	}
 
-	void keyMode(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) {
-		if (parameters[1].at(0) == '+') {
-			if (this->key_ == false && parameters[2].size() != 0) {
+	void keyMode(const std::vector<std::string> &parameters, std::deque<User>::iterator &iterUser)
+	{
+		if (parameters[1].at(0) == '+')
+		{
+			if (this->key_ == false && parameters[2].size() != 0)
+			{
 				this->key_ = true;
 				this->password_ = parameters[2];
 				this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
 				this->sendAll_(this->NOTICE(parameters, iterUser), 0);
 			}
 		}
-		else if (parameters[1].at(0) == '-') {
-			if (this->key_ == true) {
+		else if (parameters[1].at(0) == '-')
+		{
+			if (this->key_ == true)
+			{
 				this->key_ = false;
 				this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
 				this->sendAll_(this->NOTICE(parameters, iterUser), 0);
 			}
 		}
 	}
-	
-	void operatorMode(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) {
+
+	void operatorMode(const std::vector<std::string> &parameters, std::deque<User>::iterator &iterUser)
+	{
 		std::map<int, std::pair<int, User &> >::iterator iter = this->users_.find(iterUser->getSocket());
 
 		if (iter != users_.end())
 		{
-			if (parameters[1].at(0) == '+') {
+			if (parameters[1].at(0) == '+')
+			{
 				iter->second.first = 1;
 			}
-			else if (parameters[1].at(0) == '-') {
+			else if (parameters[1].at(0) == '-')
+			{
 				iter->second.first = 0;
 			}
 			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
@@ -260,17 +285,22 @@ public:
 		}
 	}
 
-	void userLimitMode(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) {
-		if (parameters[1].at(0) == '+') {
+	void userLimitMode(const std::vector<std::string> &parameters, std::deque<User>::iterator &iterUser)
+	{
+		if (parameters[1].at(0) == '+')
+		{
 			int value = std::atoi(parameters[2].c_str());
-			if (value > 0) {
+			if (value > 0)
+			{
 				this->userLimit_ = value;
 				this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
 				this->sendAll_(this->NOTICE(parameters, iterUser), 0);
 			}
 		}
-		else if (parameters[1].at(0) == '-') {
-			if (this->userLimit_ != 0) {
+		else if (parameters[1].at(0) == '-')
+		{
+			if (this->userLimit_ != 0)
+			{
 				this->userLimit_ = 0;
 				this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
 				this->sendAll_(this->NOTICE(parameters, iterUser), 0);
@@ -292,15 +322,16 @@ public:
 			return false;
 		if (iter->second.first == 1)
 			return true;
-		return false; 
+		return false;
 	}
 
 	// MODE 명령어: 채널 모드 변경
 	// void mode(struct Client *operator, char mode, const char *parameter) {
-	void mode(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) {
+	void mode(const std::vector<std::string> &parameters, std::deque<User>::iterator &iterUser)
+	{
 
-		std::string modeOp(""); 
-		std::string	para("");
+		std::string modeOp("");
+		std::string para("");
 
 		for (size_t i = 1; i < parameters.size(); i++)
 		{
@@ -317,13 +348,13 @@ public:
 				}
 			}
 		}
-		
+
 		std::istringstream ss(para);
 		std::string token;
 		int isPlus = 0;
 
 		std::vector<std::string> paras;
-		
+
 		for (size_t i = 0; i < modeOp.size(); i++)
 		{
 			if (modeOp[i] == '+')
@@ -334,7 +365,7 @@ public:
 			{
 				paras.clear();
 				paras.push_back(parameters[0]);
-				switch (modeOp[i]) 
+				switch (modeOp[i])
 				{
 				case 'i':
 					if (isPlus)
@@ -342,14 +373,14 @@ public:
 					else
 						paras.push_back("-i");
 					this->inviteMode(paras, iterUser);
-					break; 
+					break;
 				case 't':
 					if (isPlus)
 						paras.push_back("+t");
 					else
 						paras.push_back("-t");
 					this->topicMode(paras, iterUser);
-					break; 
+					break;
 				case 'k':
 					if (isPlus)
 					{
@@ -387,7 +418,7 @@ public:
 						if (token.size() != 0)
 						{
 							paras.push_back(token);
-							this->userLimitMode(paras, iterUser);		
+							this->userLimitMode(paras, iterUser);
 						}
 					}
 					else
@@ -401,25 +432,25 @@ public:
 				}
 			}
 		}
-		
+
 		// std::cout << "MODE " << std::endl;
 		// std::cout << "parameters[0]: " << parameters[0] << std::endl;
 		// std::cout << "parameters[1]: " << parameters[1] << std::endl;
 		// std::cout << "parameters[2]: " << parameters[2] << std::endl;
 		// std::cout << "MODE " << std::endl;
-		
+
 		// ex) /mode +k password
 		//     /mode #channel_name +k password
 		// parameters[0]: #channel_name
 		// parameters[1]: +k
 		// parameters[2]: password
-		
+
 		// std::string MODE = ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + "127.0.0.1" + " " + "MODE " + parameters[1] + " " + parameters[2] + "\n";
 		// this->send_(iterUser->getSocket(), MODE, 0);
 		// std::string notice = ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + "127.0.0.1" + " " + "MODE " + parameters[0] + " :" + parameters[1] + " " + parameters[2] + "\n";
 		// this->sendAll_(notice, 0);
 
-		//switch (parameters[1].at(1)) {
+		// switch (parameters[1].at(1)) {
 		//	case 'i':
 		//		return this->inviteMode(parameters, iterUser);
 		//	case 't':
@@ -432,7 +463,7 @@ public:
 		//		return this->userLimitMode(parameters, iterUser);
 		//	default:
 		//		break;
-		//}
+		// }
 	}
 
 	Channel(const std::string &name, User &user) : name_(name)
@@ -504,8 +535,8 @@ public:
 		std::map<int, std::pair<int, User &> >::iterator iter = users_.find(socket);
 		if (iter != users_.end())
 		{
-			//:dan-!d@localhost PART #test
-			sendAll_(":" + iter->second.second.getNickName() + iter->second.second.getUserName() + "@" + iter->second.second.getHostName()  + " PART " + name_ + "\n" ,0);
+			//: dan-!d@localhost PART #test
+			sendAll_(":" + iter->second.second.getNickName() + iter->second.second.getUserName() + "@" + iter->second.second.getHostName() + " PART " + name_ + "\n", 0);
 			users_.erase(users_.find(socket));
 		}
 	}

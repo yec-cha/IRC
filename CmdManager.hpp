@@ -49,8 +49,8 @@ public:
 
 	void cmd_JOIN(std::vector<std::string> const &parameters, std::deque<User>::iterator &iterUser)
 	{
-		//printInfo(parameters, iterUser);
-		
+		// printInfo(parameters, iterUser);
+
 		if (parameters.size() < 1)
 		{
 			ErrManager::send_461(iterUser->getSocket(), "JOIN");
@@ -72,20 +72,20 @@ public:
 				if (token[0] != '#')
 				{
 					ErrManager::send_403(iterUser->getSocket(), token);
-					return ;
+					return;
 				}
 				channelName.push_back(token);
 			}
 		}
 
+		std::istringstream ssKey(parameters[1]);
 		if (parameters.size() >= 2)
 		{
-			std::istringstream ssKey(parameters[1]);
 			std::string token2;
 			while (std::getline(ssKey, token2, ','))
 			{
 				if (!token2.empty())
-					key.push_back(token);
+					key.push_back(token2);
 			}
 		}
 
@@ -114,25 +114,25 @@ public:
 					{
 						if (!iterChannel->isInvited(*iterUser))
 						{
-							ErrManager::send_473(iterUser->getSocket(), it->first);
-							break ;
-						}	
+							ErrManager::send_473(iterUser->getSocket(), iterUser->getNickName(), it->first);
+							break;
+						}
 					}
 					if (iterChannel->getKeyBool())
 					{
 						if (it->second != iterChannel->getPassword())
 						{
-							ErrManager::send_475(iterUser->getSocket(), it->first);
-							break ;
+							ErrManager::send_475(iterUser->getSocket(), iterUser->getNickName(), it->first);
+							break;
 						}
 					}
 					if (iterChannel->getLimit() > 0 && iterChannel->getLimit() > iterChannel->getSize())
 						iterChannel->addUser(*iterUser);
 					else
 					{
-						ErrManager::send_471(iterUser->getSocket(), it->first);
+						ErrManager::send_471(iterUser->getSocket(), iterUser->getNickName(), it->first);
 					}
-					break ;
+					break;
 				}
 			}
 			if (iterChannel == this->channels.end())
@@ -186,10 +186,11 @@ public:
 		}
 
 		// is user mode
-		if (parameters[0].at(0) != '#')
+		if (parameters[0][0] != '#')
 			return;
+		//if (parameters[0][0] != '#')
+		//	return;
 
-	
 		std::deque<Channel>::iterator iterChannel = this->channels.begin();
 		for (; iterChannel < this->channels.end(); ++iterChannel)
 		{
@@ -221,39 +222,47 @@ public:
 		// if there is no channel
 		// ERR_NOSUCHCHANNEL
 
-		// if invitor is not channel member 
+		// for (size_t i = 0; i < count; i++)
+		//{
+		//	/* code */
+		// }
+
+		// if invitor is not channel member
 		// ERR_NOTONCHANNEL
 
 		// invite-only mode set, and the user is not a channel operator.
 		// ERR_CHANOPRIVSNEEDED
-		
+
 		// If the user is already on the target channel
 		// ERR_USERONCHANNEL
 
 		// When the invite is successful
 		// the server MUST send a RPL_INVITING numeric to the command issuer
-		// RPL_INVITING (341) 
-  		// "<client> <nick> <channel>"
+		// RPL_INVITING (341)
+		// "<client> <nick> <channel>"
 		std::string command = "341";
 		std::string client = iterUser->getNickName(); // 초대한 사람
 		// std::string nick = iterUser->getNickName(); // 초대받은 사람
 		std::string nick = parameters[0]; // 초대받은 사람
 		std::string channel = parameters[1];
-		std::string RPL_INVITING = command + " "  + client + " " + nick + " " + channel + "\n";
+		std::string RPL_INVITING = command + " " + client + " " + nick + " " + channel + "\n";
 		// send(iterUser->getSocket(), RPL_INVITING.c_str(), RPL_INVITING.size(), 0);
 		sendClient(iterUser->getSocket(), RPL_INVITING);
-		
-		
+
 		// INVITE message, with the issuer as <source>, to the target user
 		// Command: INVITE
 		// Parameters: <nickname> <channel>
 		std::string command_ = "INVITE";
-		// std::string client = iterUser->getNickName();
 		std::string nickname = parameters[0];
-		// std::string channel = parameters[0];
-		std::string INVITING = command_ + " "  + nickname + " " + channel + "\n";
-		// send(5, INVITING.c_str(), INVITING.size(), 0);
-		sendClient(5, INVITING);
+		std::string INVITING = ":" + iterUser->getNickName() + " " + command_ + " " + nickname + " " + channel + "\n";
+
+		for (size_t i = 0; i < users.size(); i++)
+		{
+			if (users[i].getNickName() == nickname)
+			{
+				sendClient(users[i].getSocket(), INVITING);
+			}
+		}
 	}
 
 	void cmd_KICK(std::vector<std::string> const &parameters, std::deque<User>::iterator &iterUser)
@@ -263,8 +272,7 @@ public:
 		// std::string nick = iterUser->getNickName(); // 초대받은 사람
 		std::string nick = parameters[1]; // 초대받은 사람
 		std::string channel = parameters[0];
-		std::string RPL_INVITING = command + " "  + client + " " + nick + " " + channel + "\n";
-		
+		std::string RPL_INVITING = command + " " + client + " " + nick + " " + channel + "\n";
 	}
 
 	static void send_332(int socket, const std::string &channelName, const std::string &topic)
