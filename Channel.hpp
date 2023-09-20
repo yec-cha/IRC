@@ -19,12 +19,13 @@ enum ChannelType{
 	PRIVATE // invite only?
 };
 
-class Channel {
+class Channel
+{
 private:
 	std::string name_;
 	std::string topic_;
 	std::string password_;
-	std::multimap<int, User&> users_; // operator, userInfo
+	std::multimap<int, User &> users_; // operator, userInfo
 	std::string mode_;
 	int channelType;
 
@@ -33,38 +34,49 @@ private:
 	bool topic_; // if this flag were ture, only operator can change the topic.
 
 public:
+	const std::string &getPassword() const
+	{
+		return password_;
+	}
+
 	int getType() const
 	{
 		return channelType;
 	}
 	// void send_(int socket, const std::string& buffer, std::size_t size, int flags) {
-	void send_(int socket, const std::string& buffer, int flags) {
+	void send_(int socket, const std::string &buffer, int flags)
+	{
 		std::cout << BLUE "server to (" << socket << ") : " << buffer << RESET << std::endl;
 		send(socket, buffer.c_str(), buffer.size(), flags);
 	}
 
 	// void sendAll_(int socket, const std::string& buffer, std::size_t size, int flags) {
-	void sendAll_(const std::string& buffer, int flags) {
-		for (std::multimap<int, User&>::const_iterator iter = users_.begin(); iter != this->users_.end(); ++iter) {
+	void sendAll_(const std::string &buffer, int flags)
+	{
+		for (std::multimap<int, User &>::const_iterator iter = users_.begin(); iter != this->users_.end(); ++iter)
+		{
 			send(iter->second.getSocket(), buffer.c_str(), buffer.size(), flags);
 		}
 	}
 
-	std::string message_(const std::string& userNick, const std::string& ip, const std::string& command, const std::string& params) {
+	std::string message_(const std::string &userNick, const std::string &ip, const std::string &command, const std::string &params)
+	{
 		std::string prefix = userNick + "!" + userNick + "@" + ip;
 		std::string message = ":" + prefix + " " + command + " " + params + "\n";
 		// std::string message = ":" + prefix + " " + command + params + "\n";
 		return message;
 	}
 
-	std::string RPL_TOPIC(const std::string& client, const std::string& channel) {
+	std::string RPL_TOPIC(const std::string &client, const std::string &channel)
+	{
 		std::string command = "332";
 		std::string result = ":" + command + client + channel + " :" + "\n";
 		// std::string result = ":" + command + client + channel + " :" + this->getTopic() + "\n";
 		return result;
 	}
 
-	std::string RPL_NAMREPLY(const std::string& client, const std::string& channel) {
+	std::string RPL_NAMREPLY(const std::string &client, const std::string &channel)
+	{
 		std::string command = "353";
 		std::string symbol = "=";
 		std::string result = ":" + command + client + symbol + channel + " :" + "\n";
@@ -72,27 +84,29 @@ public:
 		return result;
 	}
 
-	std::string RPL_ENDOFNAMES(const std::string& client, const std::string& channel) {
+	std::string RPL_ENDOFNAMES(const std::string &client, const std::string &channel)
+	{
 		std::string command = "366";
-		std::string result = ":" + command + client + channel + ":End of /NAMES list\n"; 
+		std::string result = ":" + command + client + channel + ":End of /NAMES list\n";
 		return result;
 	}
 
-	void welcomeChannel(std::deque<User>::iterator& iterUser) {
-		std::string JOIN = ":" + iterUser->getNickName() + "!" + iterUser->getNickName() + "@" + iterUser->getHostName() + " " + "JOIN" +  " " + this->name_ + "\n";
+	void welcomeChannel(User &user)
+	{
+		std::string JOIN = ":" + user.getNickName() + "!" + user.getNickName() + "@" + user.getHostName() + " " + "JOIN" + " " + this->name_ + "\n";
 		this->sendAll_(JOIN, 0);
 
 		std::string TOPIC_command = "332";
-		std::string TOPIC = ":ft_IRC " + TOPIC_command + " " + iterUser->getNickName() + " " + this->name_ + " :TEST\n";
-		// std::string TOPIC = ": " + TOPIC_command + " " + iterUser->getNickName() + " " + this->name_ + " :" + this->getTopic() + "\n";
-		this->send_(iterUser->getSocket(), TOPIC, 0);
+		std::string TOPIC = ":ft_IRC " + TOPIC_command + " " + user.getNickName() + " " + this->name_ + " :" + topic_ + "\n";
+		// std::string TOPIC = ": " + TOPIC_command + " " + user.getNickName() + " " + this->name_ + " :" + this->getTopic() + "\n";
+		this->send_(user.getSocket(), TOPIC, 0);
 
 		std::string NAMREPLY_command = "353";
 		std::string NAMREPLY_symbol = "=";
-		std::string NAMREPLY = ":ft_IRC " + NAMREPLY_command + " " + iterUser->getNickName() + " " + NAMREPLY_symbol + " " + this->name_ + " :";
-		
+		std::string NAMREPLY = ":ft_IRC " + NAMREPLY_command + " " + user.getNickName() + " " + NAMREPLY_symbol + " " + this->name_ + " :";
+
 		std::string nameOfClient;
-		for (std::multimap<int, User&>::iterator it = users_.begin(); it != users_.end(); it++)
+		for (std::multimap<int, User &>::iterator it = users_.begin(); it != users_.end(); it++)
 		{
 			if (it->first)
 				nameOfClient = "@" + it->second.getNickName() + " ";
@@ -102,24 +116,26 @@ public:
 		}
 
 		NAMREPLY += "\n";
-		this->send_(iterUser->getSocket(), NAMREPLY, 0);
+		this->send_(user.getSocket(), NAMREPLY, 0);
 		// this->sendAll_(NAMREPLY, 0);
 
 		std::string ENDOFNAMES_command = "366";
-		std::string ENDOFNAMES = ":ft_IRC " + ENDOFNAMES_command + " " + iterUser->getNickName() + " " + this->name_ + " :End of /NAMES list\n";
-		this->send_(iterUser->getSocket(), ENDOFNAMES, 0);
+		std::string ENDOFNAMES = ":ft_IRC " + ENDOFNAMES_command + " " + user.getNickName() + " " + this->name_ + " :End of /NAMES list\n";
+		this->send_(user.getSocket(), ENDOFNAMES, 0);
 		// this->sendAll_(ENDOFNAMES, 0);
 	}
 
-	void sendPRIVMSG(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) {
-		for (std::multimap<int, User&>::iterator iter = this->users_.begin(); iter != this->users_.end(); ++iter) {
-			if (iterUser->getSocket() != iter->second.getSocket()) {
+	void sendPRIVMSG(const std::vector<std::string> &parameters, std::deque<User>::iterator &iterUser)
+	{
+		for (std::multimap<int, User &>::iterator iter = this->users_.begin(); iter != this->users_.end(); ++iter)
+		{
+			if (iterUser->getSocket() != iter->second.getSocket())
+			{
 				std::string privmsg = ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + "127.0.0.1" + " " + "PRIVMSG " + parameters[0] + " :" + parameters[1] + "\n";
 				this->send_(iter->second.getSocket(), privmsg, 0);
 			}
 		}
 	}
-
 
 	/*
 	- i: Set/remove Invite-only channel
@@ -207,9 +223,22 @@ public:
 		}
 	}
 
-	bool isOperator(User& user) const {
-		std::multimap<int, User&>::const_iterator iter = this->users_.begin();
-		for (; iter != this->users_.end(); ++iter) {
+	bool isInChannel(User &user) const
+	{
+		std::multimap<int, User &>::const_iterator iter = this->users_.begin();
+		for (; iter != this->users_.end(); ++iter)
+		{
+			if (iter->second.getSocket() == user.getSocket())
+				return true;
+		}
+		return false;
+	}
+
+	bool isOperator(User &user) const
+	{
+		std::multimap<int, User &>::const_iterator iter = this->users_.begin();
+		for (; iter != this->users_.end(); ++iter)
+		{
 			if (iter->second.getSocket() == user.getSocket() && iter->first == 1)
 				return true;
 		}
@@ -225,7 +254,7 @@ public:
 		std::cout << "parameters[2]: " << parameters[2] << std::endl;
 		std::cout << "MODE " << std::endl;
 		// if (isOperator(*iterUser) == true) {
-		
+
 		(void)iterUser;
 		
 		// ex) /mode +k password
@@ -256,56 +285,63 @@ public:
 		}
 	}
 
-
-	Channel(const std::string &name, User& user) : name_(name) {
+	Channel(const std::string &name, User &user) : name_(name)
+	{
 		channelType = PUBLIC;
-		addUser(user);
-		// check
+		this->users_.insert(std::pair<bool, User &>(true, user));
+		welcomeChannel(user);
+
 		this->invite_ = false;
 		this->key_ = false;
 		this->topic_ = false;
 	}
 
-	void addUser(User& user) {
-		this->users_.insert(std::pair<bool, User&>(true, user));
+	void addUser(User &user)
+	{
+		this->users_.insert(std::pair<bool, User &>(false, user));
+		welcomeChannel(user);
 	}
 
-	void delUser(User& user) {
+	void delUser(User &user)
+	{
 		this->users_.erase(user.getSocket());
 	}
 
-	void setTopic(const std::string& topic) {
+	void setTopic(const std::string &topic)
+	{
 		this->topic_ = topic;
 	}
 
-	void setPass(const std::string& pass) {
+	void setPass(const std::string &pass)
+	{
 		this->topic_ = pass;
 	}
 
-	const std::string& getName() const {
+	const std::string &getName() const
+	{
 		return this->name_;
 	}
 
-	const std::string& getTopic() const {
+	const std::string &getTopic() const
+	{
 		return this->topic_;
 	}
-	
-	const std::string& getPassword() const {
-		return this->password_;
-	}
 
-	int getSize() const {
+	int getSize() const
+	{
 		return this->users_.size();
 	}
 
-	void printInfo() const {
+	void printInfo() const
+	{
 		std::cout << "[CHANNEL INFO]" << std::endl;
 		std::cout << "NAME: " << this->name_ << std::endl;
 		std::cout << "TOPIC: " << this->topic_ << std::endl;
 		std::cout << "PASS: " << this->password_ << std::endl;
-		
+
 		std::cout << " - LIST" << std::endl;
-		for (std::multimap<int, User&>::const_iterator iter = users_.begin(); iter != this->users_.end(); ++iter) {
+		for (std::multimap<int, User &>::const_iterator iter = users_.begin(); iter != this->users_.end(); ++iter)
+		{
 			std::cout << "FD: " << iter->second.getSocket() << ", USER NAME: " << iter->second.getUserName() << std::endl;
 		}
 		std::cout << " -" << std::endl;

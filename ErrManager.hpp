@@ -59,6 +59,7 @@ public:
 		sendClient(socket, response);
 	};
 
+	// ERR_NEEDMOREPARAMS
 	static void send_461(int socket, const std::string &cmd)
 	{
 		const std::string response = "461 " + cmd + " :Not enough parameters\n";
@@ -82,5 +83,4 @@ public:
 		const std::string response = "464 :Password incorrect\n";
 		sendClient(socket, response);
 	};
-
 };
