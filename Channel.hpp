@@ -23,7 +23,7 @@ class Channel
 {
 private:
 	std::string name_;
-	std::string topic_;
+	std::string topicStr_;
 	std::string password_;
 	std::multimap<int, User &> users_; // operator, userInfo
 	std::string mode_;
@@ -208,11 +208,11 @@ public:
 	}
 
 	void operatorMode(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) {
-		std::multimap<int, User&>::const_iterator iter = this->users_.begin();
+		std::multimap<int, User&>::iterator iter = this->users_.begin();
 		for (; iter != this->users_.end(); ++iter) {
 			if (iter->second.getSocket() == iterUser->getSocket()) {
 				if (parameters[1].at(0) == '+') {
-					iter->first = 1;
+					const_cast<int>(iter->first) = 1;
 				}
 				else if (parameters[1].at(0) == '-') {
 					iter->first = 0;
@@ -248,14 +248,11 @@ public:
 	// MODE 명령어: 채널 모드 변경
 	// void mode(struct Client *operator, char mode, const char *parameter) {
 	void mode(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) {
-		std::cout << "MODE " << std::endl;
-		std::cout << "parameters[0]: " << parameters[0] << std::endl;
-		std::cout << "parameters[1]: " << parameters[1] << std::endl;
-		std::cout << "parameters[2]: " << parameters[2] << std::endl;
-		std::cout << "MODE " << std::endl;
-		// if (isOperator(*iterUser) == true) {
-
-		(void)iterUser;
+		// std::cout << "MODE " << std::endl;
+		// std::cout << "parameters[0]: " << parameters[0] << std::endl;
+		// std::cout << "parameters[1]: " << parameters[1] << std::endl;
+		// std::cout << "parameters[2]: " << parameters[2] << std::endl;
+		// std::cout << "MODE " << std::endl;
 		
 		// ex) /mode +k password
 		//     /mode #channel_name +k password
@@ -263,13 +260,13 @@ public:
 		// parameters[1]: +k
 		// parameters[2]: password
 		
-		std::string MODE = ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + "127.0.0.1" + " " + "MODE " + parameters[1] + " " + parameters[2] + "\n";
-		this->send_(iterUser->getSocket(), MODE, 0);
+		// std::string MODE = ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + "127.0.0.1" + " " + "MODE " + parameters[1] + " " + parameters[2] + "\n";
+		// this->send_(iterUser->getSocket(), MODE, 0);
 		
-		std::string notice = ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + "127.0.0.1" + " " + "MODE " + parameters[0] + " :" + parameters[1] + " " + parameters[2] + "\n";
-		this->sendAll_(notice, 0);
+		// std::string notice = ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + "127.0.0.1" + " " + "MODE " + parameters[0] + " :" + parameters[1] + " " + parameters[2] + "\n";
+		// this->sendAll_(notice, 0);
 
-		return;
+		// return;
 
 		switch (parameters[1].at(1)) {
 			case 'i':
@@ -278,8 +275,8 @@ public:
 				return this->topicMode(parameters, iterUser);
 			case 'k':
 				return this->keyMode(parameters, iterUser);
-			case 'o':
-				return this->operatorMode(parameters, iterUser);
+			// case 'o':
+			// 	return this->operatorMode(parameters, iterUser);
 			default:
 				break;
 		}
@@ -309,7 +306,7 @@ public:
 
 	void setTopic(const std::string &topic)
 	{
-		this->topic_ = topic;
+		this->topicStr_ = topic;
 	}
 
 	void setPass(const std::string &pass)
@@ -324,7 +321,7 @@ public:
 
 	const std::string &getTopic() const
 	{
-		return this->topic_;
+		return this->topicStr_;
 	}
 
 	int getSize() const
