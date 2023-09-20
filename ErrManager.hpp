@@ -85,23 +85,30 @@ public:
 	};
 
 	//ERR_BADCHANNELKEY
-	static void send_475(int socket, const std::string &channelName)
+	static void send_475(int socket, const std::string &nickName, const std::string &channelName)
 	{
-		const std::string response = "473 " + channelName + " :Cannot join channel (+k)\n";
+		const std::string response = "473 " + nickName + " "  + channelName + " :Cannot join channel (+k)\n";
 		sendClient(socket, response);
 	};
 
 	//ERR_INVITEONLYCHAN
-	static void send_473(int socket, const std::string &channelName)
+	static void send_473(int socket, const std::string &nickName, const std::string &channelName)
 	{
-		const std::string response = "473 " + channelName + " :Cannot join channel (+i)\n";
+		const std::string response = "473 " + nickName + " " + channelName + " :Cannot join channel (+i)\n";
 		sendClient(socket, response);
 	};
 
 	//ERR_CHANNELISFULL
-	static void send_471(int socket, const std::string &channelName)
+	static void send_471(int socket, const std::string &nickName, const std::string &channelName)
 	{
-		const std::string response = "471 " + channelName + " :Cannot join channel (+l)\n";
+		const std::string response = "471 " + nickName + " " + channelName + " :Cannot join channel (+l)\n";
+		sendClient(socket, response);
+	};
+
+	//ERR_CHANNELISFULL
+	static void send_403(int socket, const std::string &channelName)
+	{
+		const std::string response = "403 " + channelName + " :No such channel\n";
 		sendClient(socket, response);
 	};
 };
