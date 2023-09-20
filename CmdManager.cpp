@@ -179,21 +179,21 @@ void CmdManager::cmd_TOPIC(const std::vector<std::string> &parameters, std::dequ
 			{
 				if (itChannel->isInChannel(*iter))
 				{
-					if (topicBool == true)
-					{
-						if (itChannel->isOperator(*iter))
-						{
-							; // change topic
-						}
-						else
-						{
-							; // you are not op in that CH ERR_CHANOPRIVSNEEDED
-						}
-					}
-					else
-					{
-						; // change topic
-					}
+					//if (topicBool == true)
+					//{
+					//	if (itChannel->isOperator(*iter))
+					//	{
+					//		; // change topic
+					//	}
+					//	else
+					//	{
+					//		; // you are not op in that CH ERR_CHANOPRIVSNEEDED
+					//	}
+					//}
+					//else
+					//{
+					//	; // change topic
+					//}
 				}
 				else
 					; // you not in channel;ERR_NOTONCHANNEL
@@ -265,4 +265,8 @@ void CmdManager::afterRegisteredMsg(std::string &cmd, const std::vector<std::str
 		cmd_MODE(parameters, iter);
 	if (cmd == "TOPIC")
 		cmd_TOPIC(parameters, iter);
+	if (cmd == "INVITE")
+		cmd_INVITE(parameters, iter);
+	if (cmd == "KICK")
+		cmd_KICK(parameters, iter);
 };

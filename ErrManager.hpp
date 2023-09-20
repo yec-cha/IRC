@@ -83,4 +83,25 @@ public:
 		const std::string response = "464 :Password incorrect\n";
 		sendClient(socket, response);
 	};
+
+	//ERR_BADCHANNELKEY
+	static void send_475(int socket, const std::string &channelName)
+	{
+		const std::string response = "473 " + channelName + " :Cannot join channel (+k)\n";
+		sendClient(socket, response);
+	};
+
+	//ERR_INVITEONLYCHAN
+	static void send_473(int socket, const std::string &channelName)
+	{
+		const std::string response = "473 " + channelName + " :Cannot join channel (+i)\n";
+		sendClient(socket, response);
+	};
+
+	//ERR_CHANNELISFULL
+	static void send_471(int socket, const std::string &channelName)
+	{
+		const std::string response = "471 " + channelName + " :Cannot join channel (+l)\n";
+		sendClient(socket, response);
+	};
 };

@@ -49,6 +49,8 @@ public:
 
 	void cmd_JOIN(std::vector<std::string> const &parameters, std::deque<User>::iterator &iterUser)
 	{
+		//printInfo(parameters, iterUser);
+		
 		if (parameters.size() < 1)
 		{
 			ErrManager::send_461(iterUser->getSocket(), "JOIN");
@@ -93,48 +95,43 @@ public:
 
 		std::deque<Channel>::iterator iterChannel = channels.begin();
 
+		// int canJoin = 0;
+		// int requiredJoin = 0;
 		for (std::map<std::string, std::string>::iterator it = channelList.begin(); it != channelList.end(); it++)
 		{
 			for (iterChannel = channels.begin(); iterChannel < this->channels.end(); ++iterChannel)
 			{
 				if (iterChannel->getName() == it->first)
 				{
-					if (iterChannel->getType() == 0)
-						iterChannel->addUser(*iterUser);
-					if (iterChannel->getType() == 1)
+					if (iterChannel->getInviteBool())
 					{
-						if (iterChannel->getPassword() == it->second)
-							iterChannel->addUser(*iterUser);
-						else
+						if (!iterChannel->isInvited(*iterUser))
 						{
-							// bad password
-							break;
+							ErrManager::send_473(iterUser->getSocket(), it->first);
+							break ;
+						}	
+					}
+					if (iterChannel->getKeyBool())
+					{
+						if (it->second != iterChannel->getPassword())
+						{
+							ErrManager::send_475(iterUser->getSocket(), it->first);
+							break ;
 						}
 					}
-					if (iterChannel->getType() == 2)
-					{
-						// invite only msg
-						break;
-					}
-					break;
+					if (iterChannel->getLimit() > 0 && iterChannel->getLimit() > iterChannel->getSize())
+						iterChannel->addUser(*iterUser);
+					else
+						ErrManager::send_471(iterUser->getSocket(), it->first);
+					break ;
 				}
 			}
 			if (iterChannel == this->channels.end())
 			{
-
-				Channel newChannel(parameters[0], *iterUser);
+				Channel newChannel(it->first, *iterUser);
 				this->channels.push_back(newChannel);
-
-				iterChannel = channels.end() - 1;
 			}
 		}
-
-		// std::cout << "make new one" << std::endl;
-		// std::cout << "[TEST 2]channel list -------" << std::endl;
-		// for (std::deque<Channel>::iterator test = this->channels.begin(); test < this->channels.end(); ++test) {
-		// 	std::cout << "channel: " << test->getName() << std::endl;
-		// }
-		// std::cout << "[TEST 2]channel list -------" << std::endl;
 	}
 
 	void cmd_PRIVMSG(std::vector<std::string> const &parameters, std::deque<User>::iterator &iterUser)
@@ -171,10 +168,6 @@ public:
 		// parameters[0]: #4444
 		// parameters[1]: +ia
 
-		// is user mode
-		if (parameters[0].at(0) != '#')
-			return;
-
 		// There is no modestring
 		if (parameters.size() < 2)
 		{
@@ -183,6 +176,11 @@ public:
 			return;
 		}
 
+		// is user mode
+		if (parameters[0].at(0) != '#')
+			return;
+
+	
 		std::deque<Channel>::iterator iterChannel = this->channels.begin();
 		for (; iterChannel < this->channels.end(); ++iterChannel)
 		{
@@ -204,6 +202,60 @@ public:
 			// ERR_NOSUCHCHANNEL (403)
 			return;
 		}
+	}
+
+	void cmd_INVITE(std::vector<std::string> const &parameters, std::deque<User>::iterator &iterUser)
+	{
+		// Command: INVITE
+		// Parameters: <nickname> <channel>
+
+		// if there is no channel
+		// ERR_NOSUCHCHANNEL
+
+		// if invitor is not channel member 
+		// ERR_NOTONCHANNEL
+
+		// invite-only mode set, and the user is not a channel operator.
+		// ERR_CHANOPRIVSNEEDED
+		
+		// If the user is already on the target channel
+		// ERR_USERONCHANNEL
+
+		// When the invite is successful
+		// the server MUST send a RPL_INVITING numeric to the command issuer
+		// RPL_INVITING (341) 
+  		// "<client> <nick> <channel>"
+		std::string command = "341";
+		std::string client = iterUser->getNickName(); // 초대한 사람
+		// std::string nick = iterUser->getNickName(); // 초대받은 사람
+		std::string nick = parameters[0]; // 초대받은 사람
+		std::string channel = parameters[1];
+		std::string RPL_INVITING = command + " "  + client + " " + nick + " " + channel + "\n";
+		// send(iterUser->getSocket(), RPL_INVITING.c_str(), RPL_INVITING.size(), 0);
+		sendClient(iterUser->getSocket(), RPL_INVITING);
+		
+		
+		// INVITE message, with the issuer as <source>, to the target user
+		// Command: INVITE
+		// Parameters: <nickname> <channel>
+		std::string command_ = "INVITE";
+		// std::string client = iterUser->getNickName();
+		std::string nickname = parameters[0];
+		// std::string channel = parameters[0];
+		std::string INVITING = command_ + " "  + nickname + " " + channel + "\n";
+		// send(5, INVITING.c_str(), INVITING.size(), 0);
+		sendClient(5, INVITING);
+	}
+
+	void cmd_KICK(std::vector<std::string> const &parameters, std::deque<User>::iterator &iterUser)
+	{
+		std::string command = "353";
+		std::string client = iterUser->getNickName(); // 초대한 사람
+		// std::string nick = iterUser->getNickName(); // 초대받은 사람
+		std::string nick = parameters[1]; // 초대받은 사람
+		std::string channel = parameters[0];
+		std::string RPL_INVITING = command + " "  + client + " " + nick + " " + channel + "\n";
+		
 	}
 
 	static void send_332(int socket, const std::string &channelName, const std::string &topic)
