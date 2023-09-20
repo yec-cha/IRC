@@ -27,7 +27,7 @@ private:
 	int serverSocket;
 	struct sockaddr_in serverAddress, clientAddr;
 	std::deque<User> users;
-	std::vector<Channel> channels;
+	std::deque<Channel> channels;
 	// struct pollfd pollfds[MAX_CONNECTIONS];
 	std::vector<struct pollfd> pollfds;
 	CmdManager cm;
