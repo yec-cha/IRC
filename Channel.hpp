@@ -9,10 +9,14 @@
 # include <vector>
 # include <deque>
 
+# include "User.hpp"
+
+class User;
+
 enum ChannelType{
 	PUBLIC,
-	SECRET,
-	PRIVATE
+	SECRET, // password?
+	PRIVATE // invite only?
 };
 
 class Channel {
@@ -23,6 +27,10 @@ private:
 	std::multimap<int, User&> users_; // operator, userInfo
 	std::string mode_;
 	int channelType;
+
+	bool invite_;
+	bool key_;
+	bool topic_; // if this flag were ture, only operator can change the topic.
 
 public:
 	int getType() const
@@ -123,54 +131,81 @@ public:
 	- o: Give/take channel operator privilege
 		채널 운영자 권한 부여/수여
 	*/
-	// Command: MODE
-	// Parameters: <target> [<modestring> [<mode arguments>...]]
-	//void mode(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) { {
-	//	/*
-	//		/mode +o NYC
-	//		params[0]: +o
-	//		params[1]: NYC
-	//	*/
-	//	// error handling
-	//	if (parameters[0].size() != 2) {
-	//		std::cout << "The size of parameters[0] is not 2." << std::endl;
-	//		return ;
-	//	}
-	//	if (parameters[0].at(1))
-	//}
+
+	std::string MODE(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) {
+		return ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + "127.0.0.1" + " " + "MODE " + parameters[1] + " " + parameters[2] + "\n";
+	}
+
+	std::string NOTICE(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) {
+		return ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + "127.0.0.1" + " " + "MODE " + parameters[0] + " :" + parameters[1] + " " + parameters[2] + "\n";
+	}
+
+	void inviteMode(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) {
+		if (parameters[1].at(0) == '+') {
+			if (this->invite_ == false) {
+				this->invite_ = true;
+				this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
+				this->sendAll_(this->NOTICE(parameters, iterUser), 0);
+			}
+		}
+		else if (parameters[1].at(0) == '-') {
+			if (this->invite_ == true) {
+				this->invite_ = false;
+				this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
+				this->sendAll_(this->NOTICE(parameters, iterUser), 0);
+			}
+		}
+	}
 	
+	void topicMode(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) {
+		if (parameters[1].at(0) == '+') {
+			if (this->topic_ == false) {
+				this->topic_ = true;
+				this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
+				this->sendAll_(this->NOTICE(parameters, iterUser), 0);
+			}
+		}
+		else if (parameters[1].at(0) == '-') {
+			if (this->topic_ == true) {
+				this->topic_ = false;
+				this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
+				this->sendAll_(this->NOTICE(parameters, iterUser), 0);
+			}
+		}
+	}
 
-	// //KICK 명령어: 클라이언트를 채널에서 강퇴
-	// void kick(struct Client *operator, struct Client *target) {
-	// 	if (operator->isOperator) {
-	// 		// 채널 운영자만이 클라이언트를 강퇴할 수 있음
-	// 		printf("%s kicked %s from the channel.\n", operator->nick, target->nick);
-	// 	} else {
-	// 		printf("You do not have permission to kick users.\n");
-	// 	}
-	// }
+	void keyMode(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) {
+		if (parameters[1].at(0) == '+') {
+			if (this->key_ == false && parameters[2].size() != 0) {
+				this->key_ = true;
+				this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
+				this->sendAll_(this->NOTICE(parameters, iterUser), 0);
+			}
+		}
+		else if (parameters[1].at(0) == '-') {
+			if (this->key_ == true) {
+				this->key_ = false;
+				this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
+				this->sendAll_(this->NOTICE(parameters, iterUser), 0);
+			}
+		}
+	}
 
-	// // INVITE 명령어: 클라이언트를 채널에 초대
-	// void invite(struct Client *operator, struct Client *target) {
-	// 	if (operator->isOperator) {
-	// 		// 채널 운영자만이 클라이언트를 채널에 초대할 수 있음
-	// 		printf("%s invited %s to the channel.\n", operator->nick, target->nick);
-	// 	} else {
-	// 		printf("You do not have permission to invite users.\n");
-	// 	}
-	// }
-
-	// //TOPIC 명령어: 채널 주제 변경 또는 보기
-	// void topic(struct Client *operator, const char *newTopic) {
-	// 	if (operator->isOperator) {
-	// 		// 채널 운영자만이 채널 주제를 변경할 수 있음
-	// 		strcpy(channel.topic, newTopic);
-	// 		printf("%s changed the channel topic to: %s\n", operator->nick, channel.topic);
-	// 	} else {
-	// 		// 채널 주제를 보기만 할 수 있음
-	// 		printf("Channel topic: %s\n", channel.topic);
-	// 	}
-	// }
+	void operatorMode(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) {
+		std::multimap<int, User&>::const_iterator iter = this->users_.begin();
+		for (; iter != this->users_.end(); ++iter) {
+			if (iter->second.getSocket() == iterUser->getSocket()) {
+				if (parameters[1].at(0) == '+') {
+					iter->first = 1;
+				}
+				else if (parameters[1].at(0) == '-') {
+					iter->first = 0;
+				}
+				this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
+				this->sendAll_(this->NOTICE(parameters, iterUser), 0);
+			}
+		}
+	}
 
 	bool isOperator(User& user) const {
 		std::multimap<int, User&>::const_iterator iter = this->users_.begin();
@@ -184,55 +219,51 @@ public:
 	// MODE 명령어: 채널 모드 변경
 	// void mode(struct Client *operator, char mode, const char *parameter) {
 	void mode(const std::vector<std::string>& parameters, std::deque<User>::iterator& iterUser) {
-		// std::cout << "MODE " << std::endl;
-		// std::cout << "parameters[0]: " << parameters[0] << std::endl;
-		// std::cout << "parameters[1]: " << parameters[1] << std::endl;
-		// std::cout << "MODE " << std::endl;
+		std::cout << "MODE " << std::endl;
+		std::cout << "parameters[0]: " << parameters[0] << std::endl;
+		std::cout << "parameters[1]: " << parameters[1] << std::endl;
+		std::cout << "parameters[2]: " << parameters[2] << std::endl;
+		std::cout << "MODE " << std::endl;
 		// if (isOperator(*iterUser) == true) {
 		
 		(void)iterUser;
-		// ex) /mode #4444 +i a
-		// MODE #4444 +ia
-		// parameters[0]: #4444
-		// parameters[1]: +ia
+		
+		// ex) /mode +k password
+		//     /mode #channel_name +k password
+		// parameters[0]: #channel_name
+		// parameters[1]: +k
+		// parameters[2]: password
+		
+		std::string MODE = ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + "127.0.0.1" + " " + "MODE " + parameters[1] + " " + parameters[2] + "\n";
+		this->send_(iterUser->getSocket(), MODE, 0);
+		
+		std::string notice = ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + "127.0.0.1" + " " + "MODE " + parameters[0] + " :" + parameters[1] + " " + parameters[2] + "\n";
+		this->sendAll_(notice, 0);
+
+		return;
 
 		switch (parameters[1].at(1)) {
 			case 'i':
-				std::cout << "mode parameter is " << parameters[1].at(1) << std::endl;
-				// channel.isInviteOnly = !channel.isInviteOnly;
-				// printf("Channel is now %sinvite-only.\n", channel.isInviteOnly ? "" : "not ");
-				break;
+				return this->inviteMode(parameters, iterUser);
 			case 't':
-				std::cout << "mode parameter is " << parameters[1].at(1) << std::endl;
-				// 채널 주제에 대한 TOPIC 명령의 제한을 설정/제거
-				// 이 부분은 실제 채팅 서버에 맞게 구현되어야 함
-				break;
+				return this->topicMode(parameters, iterUser);
 			case 'k':
-				std::cout << "mode parameter is " << parameters[1].at(1) << std::endl;
-				// strcpy(channel.channelKey, parameter);
-				// printf("Channel key is set to: %s\n", channel.channelKey);
-				break;
+				return this->keyMode(parameters, iterUser);
 			case 'o':
-				std::cout << "mode parameter is " << parameters[1].at(1) << std::endl;
-				// 클라이언트에게 채널 운영자 권한 부여/박탈
-				// 이 부분은 실제 채팅 서버에 맞게 구현되어야 함
-				break;
+				return this->operatorMode(parameters, iterUser);
 			default:
-				std::cout << "TEST" << std::endl;
-				// printf("Invalid mode: %c\n", mode);
 				break;
 		}
-		// }
-		// else
-		// 	// There is no permission
-		// 	// ERR_CHANOPRIVSNEEDED (482)
-		// 	// std::cout << "You do not have permission to change the channel mode." << std::endl;
 	}
 
 
 	Channel(const std::string &name, User& user) : name_(name) {
 		channelType = PUBLIC;
 		addUser(user);
+		// check
+		this->invite_ = false;
+		this->key_ = false;
+		this->topic_ = false;
 	}
 
 	void addUser(User& user) {
