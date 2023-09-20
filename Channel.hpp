@@ -501,8 +501,13 @@ public:
 
 	void deleteUser(const int socket)
 	{
-		if (users_.find(socket) != users_.end())
+		std::map<int, std::pair<int, User &> >::iterator iter = users_.find(socket);
+		if (iter != users_.end())
+		{
+			//:dan-!d@localhost PART #test
+			sendAll_(":" + iter->second.second.getNickName() + iter->second.second.getUserName() + "@" + iter->second.second.getHostName()  + " PART " + name_ + "\n" ,0);
 			users_.erase(users_.find(socket));
+		}
 	}
 };
 

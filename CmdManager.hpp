@@ -68,7 +68,14 @@ public:
 		while (std::getline(ssName, token, ','))
 		{
 			if (!token.empty())
+			{
+				if (token[0] != '#')
+				{
+					ErrManager::send_403(iterUser->getSocket(), token);
+					return ;
+				}
 				channelName.push_back(token);
+			}
 		}
 
 		if (parameters.size() >= 2)
@@ -122,7 +129,9 @@ public:
 					if (iterChannel->getLimit() > 0 && iterChannel->getLimit() > iterChannel->getSize())
 						iterChannel->addUser(*iterUser);
 					else
+					{
 						ErrManager::send_471(iterUser->getSocket(), it->first);
+					}
 					break ;
 				}
 			}
