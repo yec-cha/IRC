@@ -149,6 +149,61 @@ void CmdManager::cmd_PASS(const std::vector<std::string> &parameters, std::deque
 	}
 }
 
+void CmdManager::cmd_TOPIC(const std::vector<std::string> &parameters, std::deque<User>::iterator &iter)
+{
+	if (parameters.size() < 1)
+		ErrManager::send_461(iter->getSocket(), "TOPIC");
+	else if (parameters.size() == 1)
+	{
+		std::deque<Channel>::iterator itChannel;
+		for (itChannel = channels.begin(); itChannel != channels.end(); itChannel++)
+		{
+			if (itChannel->getName() == parameters[0])
+			{
+				if (itChannel->getTopic().size() != 0)
+					send_332(iter->getSocket(), itChannel->getName(), itChannel->getTopic());
+				else
+					send_331(iter->getSocket(), itChannel->getName());
+				break;
+			}
+		}
+		if (itChannel == channels.end())
+			;
+	}
+	else
+	{
+		std::deque<Channel>::iterator itChannel;
+		for (itChannel = channels.begin(); itChannel != channels.end(); itChannel++)
+		{
+			if (itChannel->getName() == parameters[0])
+			{
+				if (itChannel->isInChannel(*iter))
+				{
+					if (topicBool == true)
+					{
+						if (itChannel->isOperator(*iter))
+						{
+							; // change topic
+						}
+						else
+						{
+							; // you are not op in that CH ERR_CHANOPRIVSNEEDED
+						}
+					}
+					else
+					{
+						; // change topic
+					}
+				}
+				else
+					; // you not in channel;ERR_NOTONCHANNEL
+				break;
+			}
+		}
+		if (itChannel == channels.end())
+			;
+	}
+}
 void CmdManager::beforeRegisteredMsg(std::string &cmd, const std::vector<std::string> &parameters, std::deque<User>::iterator &iter)
 {
 	if (cmd == "PASS")
@@ -203,59 +258,11 @@ void CmdManager::afterRegisteredMsg(std::string &cmd, const std::vector<std::str
 		sendClient(iter->getSocket(), quitMsg);
 	}
 	if (cmd == "JOIN")
-	{
 		cmd_JOIN(parameters, iter);
-	}
 	if (cmd == "PRIVMSG")
 		cmd_PRIVMSG(parameters, iter);
 	if (cmd == "MODE")
 		cmd_MODE(parameters, iter);
 	if (cmd == "TOPIC")
-	{
-		if (parameters.size() < 1)
-			ErrManager::send_461(iter->getSocket(), cmd);
-		else if (parameters.size() == 1)
-		{
-			std::deque<Channel>::iterator itChannel;
-			for (itChannel = channels.begin(); itChannel != channels.end(); itChannel++)
-			{
-				if (itChannel->getName() == parameters[0])
-				{
-					if (itChannel->getTopic().size() != 0)
-						send_332(iter->getSocket(), itChannel->getName(), itChannel->getTopic());
-					else
-						send_331(iter->getSocket(), itChannel->getName());
-					break;
-				}
-			}
-			if (itChannel == channels.end())
-				;
-		}
-		else
-		{
-			std::deque<Channel>::iterator itChannel;
-			for (itChannel = channels.begin(); itChannel != channels.end(); itChannel++)
-			{
-				if (itChannel->getName() == parameters[0])
-				{
-					if (itChannel->isInChannel(*iter))
-					{
-						if (itChannel->isOperator(*iter))
-						{
-							; // change topic
-						}
-						else
-						{
-							; // you are not op in that CH ERR_CHANOPRIVSNEEDED
-						}
-					}
-					else
-						; // you not in channel;ERR_NOTONCHANNEL
-					break;
-				}
-			}
-			if (itChannel == channels.end())
-				;
-		}
-	}
+		cmd_TOPIC(parameters, iter);
 };
