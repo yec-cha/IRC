@@ -11,7 +11,7 @@ void CmdManager::sendClient(int socket, const std::string msg)
 	std::cout << "server (to " << socket << ") : " << BLUE << msg << RESET << std::endl;
 };
 
-CmdManager::CmdManager(std::deque<User> &_users, std::vector<Channel> &_channels, const std::string &_pass) : users(_users), channels(_channels), pass(_pass){};
+CmdManager::CmdManager(std::deque<User> &_users, std::deque<Channel> &_channels, const std::string &_pass) : users(_users), channels(_channels), pass(_pass){};
 
 CmdManager::~CmdManager(){};
 
@@ -171,10 +171,8 @@ void CmdManager::beforeRegisteredMsg(std::string &cmd, const std::vector<std::st
 		sendClient(iter->getSocket(), "001 " + iter->getNickName() + " :Welcome to the Internet Relay Network " + iter->getNickName() + "!" + iter->getUserName() + "@" + iter->getHostName() + "\n");
 		sendClient(iter->getSocket(), "002 " + iter->getNickName() + " :Your host is ft_IRC, running version " + VERSION + "\n");
 		sendClient(iter->getSocket(), "003 " + iter->getNickName() + " :This server was created 2023.09.07\n");
-		sendClient(iter->getSocket(), "004 " + iter->getNickName() + " :ft_IRC " + VERSION + " +i +i\n");
+		sendClient(iter->getSocket(), "004 " + iter->getNickName() + " :ft_IRC " + VERSION + " +i +itkol\n");
 		sendClient(iter->getSocket(), "Mode " + iter->getNickName() + " +i\n");
-
-		sendClient(iter->getSocket(), ":ft_IRC NICK " + iter->getNickName() + "\n");
 	}
 };
 
@@ -212,4 +210,52 @@ void CmdManager::afterRegisteredMsg(std::string &cmd, const std::vector<std::str
 		cmd_PRIVMSG(parameters, iter);
 	if (cmd == "MODE")
 		cmd_MODE(parameters, iter);
+	if (cmd == "TOPIC")
+	{
+		if (parameters.size() < 1)
+			ErrManager::send_461(iter->getSocket(), cmd);
+		else if (parameters.size() == 1)
+		{
+			std::deque<Channel>::iterator itChannel;
+			for (itChannel = channels.begin(); itChannel != channels.end(); itChannel++)
+			{
+				if (itChannel->getName() == parameters[0])
+				{
+					if (itChannel->getTopic().size() != 0)
+						send_332(iter->getSocket(), itChannel->getName(), itChannel->getTopic());
+					else
+						send_331(iter->getSocket(), itChannel->getName());
+					break;
+				}
+			}
+			if (itChannel == channels.end())
+				;
+		}
+		else
+		{
+			std::deque<Channel>::iterator itChannel;
+			for (itChannel = channels.begin(); itChannel != channels.end(); itChannel++)
+			{
+				if (itChannel->getName() == parameters[0])
+				{
+					if (itChannel->isInChannel(*iter))
+					{
+						if (itChannel->isOperator(*iter))
+						{
+							; // change topic
+						}
+						else
+						{
+							; // you are not op in that CH ERR_CHANOPRIVSNEEDED
+						}
+					}
+					else
+						; // you not in channel;ERR_NOTONCHANNEL
+					break;
+				}
+			}
+			if (itChannel == channels.end())
+				;
+		}
+	}
 };
