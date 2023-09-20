@@ -26,6 +26,7 @@ public:
 	void exeCmd(std::string msg, std::deque<User>::iterator &user);
 
 	void cmd_NICK(std::vector<std::string> const &parameters, std::deque<User>::iterator &iter);
+	void cmd_TOPIC(std::vector<std::string> const &parameters, std::deque<User>::iterator &iter);
 	void cmd_USER(std::vector<std::string> const &parameters, std::deque<User>::iterator &iter);
 	void cmd_PASS(std::vector<std::string> const &parameters, std::deque<User>::iterator &iter);
 	void beforeRegisteredMsg(std::string &cmd, std::vector<std::string> const &parameters, std::deque<User>::iterator &iter);
