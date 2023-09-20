@@ -140,6 +140,13 @@ void IRCServer::acceptConnections()
 				{
 					std::cout << iter->fd << RED " CLIENT END" RESET << "\n\n";
 					close(iter->fd);
+
+
+					for (std::deque<Channel>::iterator iterCH = channels.begin(); iterCH != channels.end(); iterCH++)
+					{
+						iterCH->deleteUser(iterUser->getSocket());
+					}
+					
 					pollfds.erase(iter);
 					users.erase(iterUser);
 					std::cout << "remain clients :" << users.size() << " " << pollfds.size() << std::endl;
