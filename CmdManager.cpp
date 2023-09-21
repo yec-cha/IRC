@@ -118,7 +118,7 @@ void CmdManager::cmd_USER(const std::vector<std::string> &parameters, std::deque
 		return;
 
 	if (parameters.size() < 4)
-		ErrManager::send_461(iter->getSocket(), iter->getNickName(), "USER");
+		ErrManager::ERR_NEEDMOREPARAMS_461(iter->getSocket(), iter->getNickName(), "USER");
 	else if (iter->getHasUser())
 		ErrManager::send_462(iter->getSocket());
 	else
@@ -135,7 +135,7 @@ void CmdManager::cmd_USER(const std::vector<std::string> &parameters, std::deque
 void CmdManager::cmd_PASS(const std::vector<std::string> &parameters, std::deque<User>::iterator &iter)
 {
 	if (parameters.size() < 1)
-		ErrManager::send_461(iter->getSocket(), iter->getNickName(), "PASS");
+		ErrManager::ERR_NEEDMOREPARAMS_461(iter->getSocket(), iter->getNickName(), "PASS");
 	else if (iter->getIsPassed())
 		ErrManager::send_462(iter->getSocket());
 	else if (parameters[0] == pass)
@@ -154,7 +154,7 @@ void CmdManager::cmd_TOPIC(const std::vector<std::string> &parameters, std::dequ
 	std::deque<Channel>::iterator itChannel;
 
 	if (parameters.size() < 1)
-		ErrManager::send_461(iter->getSocket(), iter->getNickName(), "TOPIC");
+		ErrManager::ERR_NEEDMOREPARAMS_461(iter->getSocket(), iter->getNickName(), "TOPIC");
 	else if (parameters.size() == 1)
 	{
 		for (itChannel = channels.begin(); itChannel != channels.end(); itChannel++)
@@ -169,7 +169,7 @@ void CmdManager::cmd_TOPIC(const std::vector<std::string> &parameters, std::dequ
 						send_331(iter->getSocket(), itChannel->getName());
 				}
 				else
-					ErrManager::send_442(iter->getSocket(), iter->getNickName(), itChannel->getName());; // you not in channel;ERR_NOTONCHANNEL
+					ErrManager::ERR_NOTONCHANNEL_442(iter->getSocket(), iter->getNickName(), itChannel->getName());; // you not in channel;ERR_NOTONCHANNEL
 				break;
 			}
 		}
@@ -193,7 +193,7 @@ void CmdManager::cmd_TOPIC(const std::vector<std::string> &parameters, std::dequ
 						}
 						else
 						{
-							ErrManager::send_482(iter->getSocket(), iter->getNickName(), itChannel->getName());
+							ErrManager::ERR_CHANOPRIVSNEEDED_482(iter->getSocket(), iter->getNickName(), itChannel->getName());
 						}
 					}
 					else
@@ -203,12 +203,12 @@ void CmdManager::cmd_TOPIC(const std::vector<std::string> &parameters, std::dequ
 					}
 				}
 				else
-					ErrManager::send_442(iter->getSocket(), iter->getNickName(), itChannel->getName()); // you not in channel;ERR_NOTONCHANNEL
+					ErrManager::ERR_NOTONCHANNEL_442(iter->getSocket(), iter->getNickName(), itChannel->getName()); // you not in channel;ERR_NOTONCHANNEL
 				break;
 			}
 		}
 		if (itChannel == channels.end())
-			ErrManager::send_403(iter->getSocket(), iter->getNickName(), parameters[0]);
+			ErrManager::ERR_NOSUCHCHANNEL_403(iter->getSocket(), iter->getNickName(), parameters[0]);
 	}
 }
 void CmdManager::beforeRegisteredMsg(std::string &cmd, const std::vector<std::string> &parameters, std::deque<User>::iterator &iter)

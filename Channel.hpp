@@ -1,16 +1,19 @@
 #ifndef CHANNEL_HPP
-#define CHANNEL_HPP
+# define CHANNEL_HPP
 
-#include <map>
-#include <iostream>
-#include <iterator>
-#include <string>
-#include <sys/socket.h>
-#include <vector>
-#include <deque>
-#include <sstream>
+# include <map>
+# include <iostream>
+# include <iterator>
+# include <string>
+# include <sys/socket.h>
+# include <vector>
+# include <deque>
+# include <sstream>
 
-#include "User.hpp"
+# include "User.hpp"
+
+# define OPERATOR	1
+# define NORMAL		0
 
 class User;
 
@@ -268,21 +271,37 @@ public:
 
 	void operatorMode(const std::vector<std::string> &parameters, std::deque<User>::iterator &iterUser)
 	{
-		std::map<int, std::pair<int, User &> >::iterator iter = this->users_.find(iterUser->getSocket());
-
-		if (iter != users_.end())
-		{
-			if (parameters[1].at(0) == '+')
-			{
-				iter->second.first = 1;
+		// std::map<int, std::pair<int, User &> >::iterator iter = this->users_.find(iterUser->getSocket());
+		std::map<int, std::pair<int, User &> >::iterator iter = this->users_.begin();
+		for (; iter != this->users_.end(); ++iter) {
+			if (iter->second.second.getNickName() == parameters[2]) {
+				if (parameters[1].at(0) == '+')
+				{
+					iter->second.first = 1;
+				}
+				else if (parameters[1].at(0) == '-')
+				{
+					iter->second.first = 0;
+				}
+				this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
+				this->sendAll_(this->NOTICE(parameters, iterUser), 0);
+				return ;
 			}
-			else if (parameters[1].at(0) == '-')
-			{
-				iter->second.first = 0;
-			}
-			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
-			this->sendAll_(this->NOTICE(parameters, iterUser), 0);
 		}
+
+		// if (iter != users_.end())
+		// {
+		// 	if (parameters[1].at(0) == '+')
+		// 	{
+		// 		iter->second.first = 1;
+		// 	}
+		// 	else if (parameters[1].at(0) == '-')
+		// 	{
+		// 		iter->second.first = 0;
+		// 	}
+		// 	this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
+		// 	this->sendAll_(this->NOTICE(parameters, iterUser), 0);
+		// }
 	}
 
 	void userLimitMode(const std::vector<std::string> &parameters, std::deque<User>::iterator &iterUser)
@@ -339,7 +358,7 @@ public:
 	// void mode(struct Client *operator, char mode, const char *parameter) {
 	void mode(const std::vector<std::string> &parameters, std::deque<User>::iterator &iterUser)
 	{
-
+		std::cout << "MODE PARSING START" << std::endl;
 		std::string modeOp("");
 		std::string para("");
 

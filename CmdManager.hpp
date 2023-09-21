@@ -53,7 +53,7 @@ public:
 
 		if (parameters.size() < 1)
 		{
-			ErrManager::send_461(iterUser->getSocket(), iterUser->getNickName(), "JOIN");
+			ErrManager::ERR_NEEDMOREPARAMS_461(iterUser->getSocket(), iterUser->getNickName(), "JOIN");
 			return;
 		}
 
@@ -71,7 +71,7 @@ public:
 			{
 				if (token.at(0) != '#')
 				{
-					ErrManager::send_403(iterUser->getSocket(), iterUser->getNickName(), token);
+					ErrManager::ERR_NOSUCHCHANNEL_403(iterUser->getSocket(), iterUser->getNickName(), token);
 					return;
 				}
 				channelName.push_back(token);
@@ -79,8 +79,6 @@ public:
 		}
 
 		std::cout << "SEG1" << std::endl;
-
-		// std::stringstream ssKey(parameters[1]);
 		if (parameters.size() > 2)
 		{
 			std::stringstream ssKey(parameters[1]);
@@ -92,7 +90,6 @@ public:
 				}
 			}
 		}
-
 		std::cout << "SEG2" << std::endl;
 
 		std::pair<std::string, std::string> tmp;
@@ -223,43 +220,32 @@ public:
 		const std::string user(parameters[0]);
 		const std::string channel(parameters[1]);
 
-		// ERR_NEEDMOREPARAMS (461) Not enough parameters
 		if (parameters.size() != 2)
-			return ErrManager::send_461(iterUser->getSocket(), iterUser->getNickName(), "INVITE");
+			return ErrManager::ERR_NEEDMOREPARAMS_461(iterUser->getSocket(), iterUser->getNickName(), "INVITE");
 
 		std::deque<Channel>::iterator iterChannel = this->channels.begin();
 		for (; iterChannel != this->channels.end(); ++iterChannel) {
 			if (iterChannel->getName() == channel)
 				break ;
 		}
-
-		// ERR_NOSUCHCHANNEL (403) No such channel
 		if (iterChannel == this->channels.end())
-			return ErrManager::send_403(iterUser->getSocket(), iterUser->getNickName(), channel);
+			return ErrManager::ERR_NOSUCHCHANNEL_403(iterUser->getSocket(), iterUser->getNickName(), channel);
 		
-		// ERR_NOTONCHANNEL (442) You're not on that channel
 		if (iterChannel->isInChannel(*iterUser) == false)
-			return ErrManager::send_442(iterUser->getSocket(), iterUser->getNickName(), channel);
+			return ErrManager::ERR_NOTONCHANNEL_442(iterUser->getSocket(), iterUser->getNickName(), channel);
+		
+		if (iterChannel->getInviteBool() == true)
+			if (iterChannel->isOperator(*iterUser) == false)
+				return ErrManager::ERR_CHANOPRIVSNEEDED_482(iterUser->getSocket(), iterUser->getNickName(), channel);
 
-		// ERR_CHANOPRIVSNEEDED (482) You're not channel operator
-		if (iterChannel->isOperator(*iterUser) == false)
-			return ErrManager::send_482(iterUser->getSocket(), iterUser->getNickName(), channel);
-
-		// ERR_USERONCHANNEL (443) is already on channel
 		if (iterChannel->isInChannel(user) == true)
-			return ErrManager::send_443(iterUser->getSocket(), iterUser->getNickName(), user, channel);
+			return ErrManager::ERR_USERONCHANNEL_443(iterUser->getSocket(), iterUser->getNickName(), user, channel);
 
-		// When the invite is successful
-		// RPL_INVITING (341) "<client> <nick> <channel>"
 		std::string RPL_INVITING = "341 " + iterUser->getNickName() + " " + user + " " + channel + "\n";
 		sendClient(iterUser->getSocket(), RPL_INVITING);
 
-		// Command: INVITE
-		// Parameters: <nickname> <channel>
 		std::string INVITING = ":" + iterUser->getNickName() + " INVITE " + user + " " + channel + "\n";
-
-		for (size_t i = 0; i < users.size(); i++)
-		{
+		for (size_t i = 0; i < users.size(); i++) {
 			if (users[i].getNickName() == user)
 				sendClient(users[i].getSocket(), INVITING);
 		}
