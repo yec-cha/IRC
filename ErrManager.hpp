@@ -25,6 +25,14 @@ private:
 	};
 
 public:
+	// // ERR_NOSUCHCHANNEL (403) 
+  	// // "<client> <channel> :No such channel"
+	// static void send_403(int socket, const std::string& channelName)
+	// {
+	// 	const std::string response = "409 :No origin specified\n";
+	// 	sendClient(socket, response);
+	// };
+
 	static void send_409(int socket)
 	{
 		const std::string response = "409 :No origin specified\n";
@@ -121,6 +129,14 @@ public:
 	static void send_442(int socket, const std::string &nickName, const std::string &channelName)
 	{
 		const std::string response = "442 " + nickName + " " + channelName + " :You're not on that channel\n";
+		sendClient(socket, response);
+	};
+
+	// ERR_USERONCHANNEL (443)
+	// Returned when a client tries to invite <nick> to a channel they’re already joined to.
+	static void send_443(int socket, const std::string &client, const std::string& user, const std::string &channelName)
+	{
+		const std::string response = "443 " + client + " " + user + " " + channelName + " :is already on channel\n";
 		sendClient(socket, response);
 	};
 };
