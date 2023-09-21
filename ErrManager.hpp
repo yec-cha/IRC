@@ -25,45 +25,59 @@ private:
 	};
 
 public:
+	// ERR_NOSUCHNICK (401) "<client> <nickname> :No such nick/channel"
+	static void ERR_NOSUCHNICK_401(int socket, const std::string& client, const std::string& nickname)
+	{
+		const std::string response = "401 " + client + " " + nickname + " :No such nick/channel\n";
+		sendClient(socket, response);
+	};
+
 	// ERR_CHANNELISFULL (403) "<client> <channel> :No such channel"
-	static void send_403(int socket, const std::string &client, const std::string &channel)
+	static void ERR_NOSUCHCHANNEL_403(int socket, const std::string &client, const std::string &channel)
 	{
 		const std::string response = "403 " + client + " " + channel + " :No such channel\n";
 		sendClient(socket, response);
 	};
 
 	// ERR_NOTONCHANNEL (442) "<client> <channel> :You're not on that channel"
-	static void send_442(int socket, const std::string &client, const std::string &channel)
+	static void ERR_NOTONCHANNEL_442(int socket, const std::string &client, const std::string &channel)
 	{
 		const std::string response = "442 " + client + " " + channel + " :You're not on that channel\n";
 		sendClient(socket, response);
 	};
 
 	// ERR_NEEDMOREPARAMS (461) "<client> <command> :Not enough parameters"
-	static void send_461(int socket, const std::string &client, const std::string &command)
+	static void ERR_NEEDMOREPARAMS_461(int socket, const std::string &client, const std::string &command)
 	{
 		const std::string response = "461 " + client + " " + command + " :Not enough parameters\n";
 		sendClient(socket, response);
 	};
 
 	// ERR_CHANOPRIVSNEEDED (482) <client> <channel> :You're not channel operator"
-	static void send_482(int socket, const std::string &client, const std::string &channel)
+	static void ERR_CHANOPRIVSNEEDED_482(int socket, const std::string &client, const std::string &channel)
 	{
 		const std::string response = "482 " + client + " " + channel + " :You're not channel operator\n";
 		sendClient(socket, response);
 	};
 
 	// ERR_USERONCHANNEL (443) "<client> <nick> <channel> :is already on channel"
-	static void send_443(int socket, const std::string &client, const std::string& user, const std::string &channelName)
+	static void ERR_USERONCHANNEL_443(int socket, const std::string &client, const std::string& user, const std::string &channel)
 	{
-		const std::string response = "443 " + client + " " + user + " " + channelName + " :is already on channel\n";
+		const std::string response = "443 " + client + " " + user + " " + channel + " :is already on channel\n";
 		sendClient(socket, response);
 	};
-	
+
+	// ERR_USERNOTINCHANNEL (441) "<client> <user> <channel> :They aren't on that channel"
+  	static void ERR_USERNOTINCHANNEL_441(int socket, const std::string &client, const std::string& user, const std::string &channel)
+	{
+		const std::string response = "441 " + client + " " + user + " " + channel + " :They aren't on that channell\n";
+		sendClient(socket, response);
+	};
+
 
 	// // ERR_NOSUCHCHANNEL (403) 
   	// // "<client> <channel> :No such channel"
-	// static void send_403(int socket, const std::string& channelName)
+	// static void ERR_NOSUCHCHANNEL_403(int socket, const std::string& channelName)
 	// {
 	// 	const std::string response = "409 :No origin specified\n";
 	// 	sendClient(socket, response);
