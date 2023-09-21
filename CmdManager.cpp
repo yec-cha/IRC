@@ -118,7 +118,7 @@ void CmdManager::cmd_USER(const std::vector<std::string> &parameters, std::deque
 		return;
 
 	if (parameters.size() < 4)
-		ErrManager::send_461(iter->getSocket(), "USER");
+		ErrManager::send_461(iter->getSocket(), iter->getNickName(), "USER");
 	else if (iter->getHasUser())
 		ErrManager::send_462(iter->getSocket());
 	else
@@ -135,7 +135,7 @@ void CmdManager::cmd_USER(const std::vector<std::string> &parameters, std::deque
 void CmdManager::cmd_PASS(const std::vector<std::string> &parameters, std::deque<User>::iterator &iter)
 {
 	if (parameters.size() < 1)
-		ErrManager::send_461(iter->getSocket(), "PASS");
+		ErrManager::send_461(iter->getSocket(), iter->getNickName(), "PASS");
 	else if (iter->getIsPassed())
 		ErrManager::send_462(iter->getSocket());
 	else if (parameters[0] == pass)
@@ -154,7 +154,7 @@ void CmdManager::cmd_TOPIC(const std::vector<std::string> &parameters, std::dequ
 	std::deque<Channel>::iterator itChannel;
 
 	if (parameters.size() < 1)
-		ErrManager::send_461(iter->getSocket(), "TOPIC");
+		ErrManager::send_461(iter->getSocket(), iter->getNickName(), "TOPIC");
 	else if (parameters.size() == 1)
 	{
 		for (itChannel = channels.begin(); itChannel != channels.end(); itChannel++)
@@ -208,7 +208,7 @@ void CmdManager::cmd_TOPIC(const std::vector<std::string> &parameters, std::dequ
 			}
 		}
 		if (itChannel == channels.end())
-			ErrManager::send_403(iter->getSocket(), parameters[0]);
+			ErrManager::send_403(iter->getSocket(), iter->getNickName(), parameters[0]);
 	}
 }
 void CmdManager::beforeRegisteredMsg(std::string &cmd, const std::vector<std::string> &parameters, std::deque<User>::iterator &iter)

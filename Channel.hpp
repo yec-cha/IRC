@@ -20,7 +20,7 @@ private:
 	std::string name_;
 	std::string topicStr_;
 	std::string password_;
-	std::map<int, std::pair<int, User &> > users_; // socket, <operator, userInfo>
+	std::map<int, std::pair<int, User&> > users_; // socket, <operator, userInfo>
 	std::string mode_;
 	std::vector<std::string> invitedUser;
 
@@ -313,6 +313,16 @@ public:
 		if (users_.find(user.getSocket()) == users_.end())
 			return false;
 		return true;
+	}
+
+	bool isInChannel(const std::string& user) const
+	{
+		std::map<int, std::pair<int, User&> >::const_iterator iter = this->users_.begin();
+		for (; iter != this->users_.end(); ++iter) {
+			if (iter->second.second.getNickName() == user)
+				return true;
+		}
+		return false;
 	}
 
 	bool isOperator(User &user) const
