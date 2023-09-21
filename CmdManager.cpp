@@ -199,7 +199,7 @@ void CmdManager::cmd_TOPIC(const std::vector<std::string> &parameters, std::dequ
 					else
 					{
 						itChannel->setTopic(parameters[1]);
-						itChannel->sendAll_("TOPIC " + parameters[1] + "\n", 0);
+						itChannel->sendAll_(":" + iter->getNickName() + " TOPIC " + itChannel->getName() + " " + parameters[1] + "\n", 0);
 					}
 				}
 				else
