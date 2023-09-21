@@ -255,7 +255,7 @@ void CmdManager::afterRegisteredMsg(std::string &cmd, const std::vector<std::str
 	}
 	if (cmd == "QUIT")
 	{
-		std::string quitMsg = "QUIT :";
+		std::string quitMsg = ":ft_IRC QUIT :";
 		iter->endCilent();
 
 		if (parameters.size() > 0)

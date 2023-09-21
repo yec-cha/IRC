@@ -66,7 +66,13 @@ int main(int argc, char** argv) {
     if (port == -1)
         return 1;
     
-    IRCServer server(port, argv[2]);
+	IRCServer server(port, argv[2]);
+
+	struct sigaction sig;
+	sig.sa_handler = server.signal_handler;
+	sigaction(SIGINT, &sig, 0);
+	sigaction(SIGQUIT, &sig, 0);
+
 	server.acceptConnections();
 	return 0;
 }

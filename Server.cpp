@@ -1,5 +1,7 @@
 #include "Server.hpp"
 
+std::vector<struct pollfd> IRCServer::pollfds;
+
 IRCServer::IRCServer() : cm(users, channels, pass) {}
 
 IRCServer::IRCServer(int port, const std::string _pass) : cm(users, channels, pass), port_(port), pass(_pass)
@@ -44,19 +46,10 @@ void IRCServer::handleClient(int clientSocket)
 
 	pollfds.push_back(tmp);
 
-	std::cout << RED << users.size() << RESET << std::endl;
-	for (size_t i = 0; i < users.size(); i++)
-	{
-		users[i].getMyState();
-	}
 
 	User newuser(clientSocket);
-
-	std::cout << BLUE << newuser.getIsRegistered() << RESET << std::endl;
-
 	users.push_back(newuser);
 
-	std::cout << RED << users.size() << RESET << std::endl;
 
 	for (size_t i = 0; i < users.size(); i++)
 	{
