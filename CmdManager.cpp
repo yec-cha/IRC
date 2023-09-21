@@ -199,7 +199,7 @@ void CmdManager::cmd_TOPIC(const std::vector<std::string> &parameters, std::dequ
 					else
 					{
 						itChannel->setTopic(parameters[1]);
-						itChannel->sendAll_("TOPIC " + parameters[1] + "\n", 0);
+						itChannel->sendAll_(":" + iter->getNickName() + " TOPIC " + itChannel->getName() + " " + parameters[1] + "\n", 0);
 					}
 				}
 				else
@@ -255,7 +255,7 @@ void CmdManager::afterRegisteredMsg(std::string &cmd, const std::vector<std::str
 	}
 	if (cmd == "QUIT")
 	{
-		std::string quitMsg = "QUIT :";
+		std::string quitMsg = ":ft_IRC QUIT :";
 		iter->endCilent();
 
 		if (parameters.size() > 0)
