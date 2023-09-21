@@ -3,12 +3,10 @@
 NAME		= ircserv
 
 CXXFLAGS	= -Wall -Wextra -Werror -std=c++98
-# CXXFLAGS	= -Wall -Wextra -Werror -std=c++11
 RFLAG		= -r
 
 OBJ_DIR		= obj
-
-SRCS		= main.cpp Server.cpp User.cpp CmdManager.cpp
+SRCS		= main.cpp Server.cpp User.cpp Channel.cpp CmdManager.cpp
 
 OBJ			= $(SRCS:.cpp=.o)
 OBJS		= $(addprefix $(OBJ_DIR)/, $(OBJ))
