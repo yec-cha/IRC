@@ -433,7 +433,7 @@ void Channel::deleteUser(const int socket)
 	std::map<int, std::pair<int, User *> >::iterator iter = users_.find(socket);
 	if (iter != users_.end())
 	{
-		sendAll_(":" + iter->second.second->getNickName() + iter->second.second->getUserName() + "@" + iter->second.second->getHostName() + " PART " + name_ + "\n", 0);
+		sendAll_(":" + iter->second.second->getNickName() + "!" + iter->second.second->getUserName() + "@" + iter->second.second->getHostName() + " PART " + name_ + "\n", 0);
 		users_.erase(users_.find(socket));
 	}
 }

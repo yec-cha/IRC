@@ -78,7 +78,7 @@ void CmdManager::cmd_JOIN(std::vector<std::string> const &parameters, std::deque
 			channelName.push_back(token);
 		}
 	}
-	if (parameters.size() > 2)
+	if (parameters.size() > 1)
 	{
 		std::stringstream ssKey(parameters[1]);
 		std::string token2;
@@ -99,6 +99,8 @@ void CmdManager::cmd_JOIN(std::vector<std::string> const &parameters, std::deque
 			tmp.second = "";
 		channelList.insert(tmp);
 	}
+
+	std::cout << tmp.first << " pass : " << tmp.second << std::endl;
 
 	std::deque<Channel>::iterator iterChannel = channels.begin();
 
@@ -179,6 +181,15 @@ void CmdManager::cmd_INVITE(std::vector<std::string> const &parameters, std::deq
 	if (parameters.size() != 2)
 		return Message::ERR_NEEDMOREPARAMS_461(iterUser->getSocket(), iterUser->getNickName(), "INVITE");
 
+	std::deque<User>::iterator iter = this->users.begin();
+	for (; iter < this->users.end(); ++iter)
+	{
+		if (iter->getNickName() == user)
+			break ;
+	}
+	if (iter == this->users.end())
+		return Message::ERR_NOSUCHNICK_401(iterUser->getSocket(), iterUser->getNickName(), user);
+
 	std::deque<Channel>::iterator iterChannel = this->channels.begin();
 	for (; iterChannel != this->channels.end(); ++iterChannel) {
 		if (iterChannel->getName() == channel)
@@ -199,15 +210,10 @@ void CmdManager::cmd_INVITE(std::vector<std::string> const &parameters, std::deq
 
 	const std::string RPL_INVITING = "341 " + iterUser->getNickName() + " " + user + " " + channel + "\n";
 	sendClient(iterUser->getSocket(), RPL_INVITING);
-
+	
 	const std::string INVITING = ":" + iterUser->getNickName() + " INVITE " + user + " " + channel + "\n";
-	for (size_t i = 0; i < users.size(); i++) {
-		if (users[i].getNickName() == user)
-		{
-			iterChannel->addInvitedUser(users[i].getNickName());
-			sendClient(users[i].getSocket(), INVITING);
-		}
-	}
+	iterChannel->addInvitedUser(iter->getNickName());
+	sendClient(iter->getSocket(), INVITING);
 }
 
 void CmdManager::cmd_KICK(std::vector<std::string> const &parameters, std::deque<User>::iterator &iterUser)
@@ -402,7 +408,7 @@ void CmdManager::cmd_TOPIC(const std::vector<std::string> &parameters, std::dequ
 						if (itChannel->isOperator(*iter))
 						{
 							itChannel->setTopic(parameters[1]);
-							itChannel->sendAll_("TOPIC " + parameters[1] + "\n", 0);
+							itChannel->sendAll_(":" + iter->getNickName() + " TOPIC " + itChannel->getName() + " " + parameters[1] + "\n", 0);
 						}
 						else
 							Message::ERR_CHANOPRIVSNEEDED_482(iter->getSocket(), iter->getNickName(), itChannel->getName());

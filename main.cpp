@@ -1,5 +1,19 @@
 #include "Server.hpp"
 
+std::string& ltrim(std::string& str, const char* t = " \t\n\r\f\v") {
+	str.erase(0, str.find_first_not_of(t));
+	return str;
+}
+
+std::string& rtrim(std::string& str, const char* t = " \t\n\r\f\v") {
+	str.erase(str.find_last_not_of(t) + 1);
+	return str;
+}
+
+std::string& trim(std::string& str, const char* t = " \t\n\r\f\v") {
+	return ltrim(rtrim(str, t), t);
+}
+
 int checkArguments(int argc, char** argv) {
     if (argc != 3)
         return -1;
@@ -16,21 +30,24 @@ int checkArguments(int argc, char** argv) {
         return -1;
 	}
 	std::string pass(argv[2]);
+    trim(pass);
 	if (pass.size() <= 0)
 	{
 		return -1;
 	}
+    std::cout << "PASSWORD: [" << pass << "]" << std::endl;
     return result;
 }
 
 int main(int argc, char** argv) {
-	int port = checkArguments(argc, argv);
+    int port = checkArguments(argc, argv);
     if (port == -1)
 	{
         return 1;
 	}
-    
-	Server server(port, argv[2]);
+	
+	std::string pass(argv[2]);
+	Server server(port, trim(pass));
 
 	struct sigaction sig;
 	sig.sa_handler = server.signal_handler;
