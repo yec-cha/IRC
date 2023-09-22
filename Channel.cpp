@@ -5,7 +5,7 @@ Channel::Channel() {}
 Channel::Channel(const std::string &name, User &user)
 : name_(name), invite_(false), key_(false), topic_(false)
 {
-	this->users_.insert(std::pair<int, std::pair<int, User &> >(user.getSocket(), std::pair<int, User &>(1, user)));
+	this->users_.insert(std::pair<int, std::pair<int, User *> >(user.getSocket(), std::pair<int, User *>(1, &user)));
 	welcomeChannel(user);
 }
 
@@ -82,13 +82,13 @@ void Channel::send_(int socket, const std::string &buffer, int flags)
 
 void Channel::sendAll_(const std::string &buffer, int flags)
 {
-	for (std::map<int, std::pair<int, User &> >::const_iterator iter = users_.begin(); iter != this->users_.end(); ++iter)
+	for (std::map<int, std::pair<int, User *> >::const_iterator iter = users_.begin(); iter != this->users_.end(); ++iter)
 		send_(iter->first, buffer, flags);
 }
 
 void Channel::sendPrivMsg_(const std::string &buffer, int socket, int flags)
 {
-	for (std::map<int, std::pair<int, User &> >::iterator iter = this->users_.begin(); iter != this->users_.end(); ++iter)
+	for (std::map<int, std::pair<int, User *> >::iterator iter = this->users_.begin(); iter != this->users_.end(); ++iter)
 	{
 		if (socket != iter->first)
 			this->send_(iter->first, buffer, flags);
@@ -97,7 +97,7 @@ void Channel::sendPrivMsg_(const std::string &buffer, int socket, int flags)
 
 void Channel::sendChannelPRIVMSG(const std::vector<std::string> &parameters, std::deque<User>::iterator &iterUser)
 {
-	for (std::map<int, std::pair<int, User &> >::iterator iter = this->users_.begin(); iter != this->users_.end(); ++iter)
+	for (std::map<int, std::pair<int, User *> >::iterator iter = this->users_.begin(); iter != this->users_.end(); ++iter)
 	{
 		if (iterUser->getSocket() != iter->first)
 		{
@@ -121,12 +121,12 @@ void Channel::welcomeChannel(User &user)
 	std::string NAMREPLY = ":ft_IRC " + NAMREPLY_command + " " + user.getNickName() + " " + NAMREPLY_symbol + " " + this->name_ + " :";
 
 	std::string nameOfClient;
-	for (std::map<int, std::pair<int, User &> >::iterator it = users_.begin(); it != users_.end(); it++)
+	for (std::map<int, std::pair<int, User *> >::iterator it = users_.begin(); it != users_.end(); it++)
 	{
 		if (it->second.first)
-			nameOfClient = "@" + it->second.second.getNickName() + " ";
+			nameOfClient = "@" + it->second.second->getNickName() + " ";
 		else
-			nameOfClient = it->second.second.getNickName() + " ";
+			nameOfClient = it->second.second->getNickName() + " ";
 		NAMREPLY += nameOfClient;
 	}
 
@@ -223,9 +223,9 @@ void Channel::keyMode(const std::vector<std::string> &parameters, std::deque<Use
 
 void Channel::operatorMode(const std::vector<std::string> &parameters, std::deque<User>::iterator &iterUser)
 {
-	std::map<int, std::pair<int, User &> >::iterator iter = this->users_.begin();
+	std::map<int, std::pair<int, User *> >::iterator iter = this->users_.begin();
 	for (; iter != this->users_.end(); ++iter) {
-		if (iter->second.second.getNickName() == parameters[2]) {
+		if (iter->second.second->getNickName() == parameters[2]) {
 			if (parameters[1].at(0) == '+')
 				iter->second.first = 1;
 			else if (parameters[1].at(0) == '-')
@@ -269,9 +269,9 @@ bool Channel::isInChannel(User &user) const
 
 bool Channel::isInChannel(const std::string& user) const
 {
-	std::map<int, std::pair<int, User&> >::const_iterator iter = this->users_.begin();
+	std::map<int, std::pair<int, User*> >::const_iterator iter = this->users_.begin();
 	for (; iter != this->users_.end(); ++iter) {
-		if (iter->second.second.getNickName() == user)
+		if (iter->second.second->getNickName() == user)
 			return true;
 	}
 	return false;
@@ -279,7 +279,7 @@ bool Channel::isInChannel(const std::string& user) const
 
 bool Channel::isOperator(User &user) const
 {
-	std::map<int, std::pair<int, User &> >::const_iterator iter = users_.find(user.getSocket());
+	std::map<int, std::pair<int, User *> >::const_iterator iter = users_.find(user.getSocket());
 	if (iter == users_.end())
 		return false;
 	if (iter->second.first == 1)
@@ -394,7 +394,7 @@ void Channel::mode(const std::vector<std::string> &parameters, std::deque<User>:
 
 void Channel::addUser(User &user)
 {
-	this->users_.insert(std::pair<int, std::pair<int, User &> >(user.getSocket(), std::pair<int, User &>(0, user)));
+	this->users_.insert(std::pair<int, std::pair<int, User *> >(user.getSocket(), std::pair<int, User *>(0, &user)));
 	welcomeChannel(user);
 }
 
@@ -430,10 +430,10 @@ int Channel::getSize() const
 
 void Channel::deleteUser(const int socket)
 {
-	std::map<int, std::pair<int, User &> >::iterator iter = users_.find(socket);
+	std::map<int, std::pair<int, User *> >::iterator iter = users_.find(socket);
 	if (iter != users_.end())
 	{
-		sendAll_(":" + iter->second.second.getNickName() + iter->second.second.getUserName() + "@" + iter->second.second.getHostName() + " PART " + name_ + "\n", 0);
+		sendAll_(":" + iter->second.second->getNickName() + iter->second.second->getUserName() + "@" + iter->second.second->getHostName() + " PART " + name_ + "\n", 0);
 		users_.erase(users_.find(socket));
 	}
 }
