@@ -1,19 +1,4 @@
-#include <iostream>
-#include <vector>
-#include <string>
-#include <sstream>
-#include <map>
-
-#include <arpa/inet.h>
-#include <cstring>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <poll.h>
-
-const int SERVER_PORT = 6670;
-const int MAX_CONNECTIONS = 10;
+#include "Server.hpp"
 
 // // 예제에서 사용할 Capability 목록
 // std::vector<std::string> supportedCapabilities = {"302", "other_capability"};
@@ -55,376 +40,39 @@ const int MAX_CONNECTIONS = 10;
 //     // send(clientSocket, response.c_str(), response.length(), 0);
 // }
 
-class User
-{
-private:
-	int socket;
-	std::string nickName;
-	std::string userName;
-	std::string hostName;
+int checkArguments(int argc, char** argv) {
+    if (argc != 3)
+        return -1;
+    std::string port(argv[1]);
+    if (port.size() != 4)
+        return -1;
+    // std::string::iterator iter = port.begin();
+    for (std::string::iterator iter = port.begin(); iter < port.end(); ++iter) {
+        if (std::isdigit(*iter) == false)
+            return -1;
+    }
+    int result = std::atoi(argv[1]);
+    if (result == 0)
+        return -1; // need to add
 
-public:
-	bool hasNick;
-	bool hasUser;
-	bool isPassed;
-	bool isRegistered;
+	std::string pass(argv[2]);
+	if (pass.size() <= 0)
+		return -1;
+    return result;
+}
 
-	User(int socket) : socket(socket)
-	{
-		isRegistered = false;
-		isPassed = false;
-		hasNick = false;
-		hasUser = false;
-	}
+int main(int argc, char** argv) {
+	int port = checkArguments(argc, argv);
+    if (port == -1)
+        return 1;
+    
+	IRCServer server(port, argv[2]);
 
-	int getSocket() const
-	{
-		return socket;
-	}
+	struct sigaction sig;
+	sig.sa_handler = server.signal_handler;
+	sigaction(SIGINT, &sig, 0);
+	sigaction(SIGQUIT, &sig, 0);
 
-	std::string getnickname() const
-	{
-		return nickName;
-	}
-
-	void setNick(const std::string &nick)
-	{
-		nickName = nick;
-	}
-};
-
-class Channel
-{
-public:
-	Channel(const std::string &name) : name(name) {}
-
-	void addUser(const User &user)
-	{
-		users.push_back(user);
-	}
-
-	void removeUser(int socket)
-	{
-		users.erase(std::remove_if(users.begin(), users.end(),
-								   [socket](const User &user)
-								   {
-									   return user.getSocket() == socket;
-								   }),
-					users.end());
-	}
-
-	std::string getName() const
-	{
-		return name;
-	}
-
-	const std::vector<User> &getUsers() const
-	{
-		return users;
-	}
-
-private:
-	std::string name;
-	std::vector<User> users;
-};
-
-class IRCServer
-{
-private:
-	int serverSocket;
-	struct sockaddr_in serverAddress, clientAddr;
-	std::vector<User> users;
-	std::vector<Channel> channels;
-	// struct pollfd pollfds[MAX_CONNECTIONS];
-	std::vector<struct pollfd> pollfds;
-	char buffer[532];
-
-	void cmdNick(std::vector<User>::iterator &iter, std::string &msg)
-	{
-		std::string response;
-
-		if (iter->isRegistered)
-		{
-			if (iter->isPassed)
-			{
-				iter->setNick(msg);
-			}
-		}
-		else
-		{
-			response = ":yecnam NICK hi\n";
-			send(iter->getSocket(), response.c_str(), response.length(), 0);
-		}
-	}
-
-	void beforeRegisterdMsg(std::string &cmd, std::string &msg, std::vector<User>::iterator &iter)
-	{
-		std::string response;
-
-		if (cmd == "NICK")
-		{
-			cmdNick(iter, msg);
-		}
-		else if (cmd == "PASS")
-		{
-			iter->isPassed = true;
-		}
-		else if (cmd == "USER")
-		{
-			iter->isRegistered = true;
-		}
-		else if (cmd == "CAP")
-		{
-			;
-		}
-		else
-		{
-			response = "451 : client must be registered\n";
-			send(iter->getSocket(), response.c_str(), response.length(), 0);
-		}
-
-		if (iter->isRegistered)
-		{
-			response = "001 yecnam :Welcome to the Internet Relay Network yecnam!yecnam@yecnam\n";
-			send(iter->getSocket(), response.c_str(), response.length(), 0);
-
-			response = "002 :Your host is ft_irc, running version 1\n";
-			send(iter->getSocket(), response.c_str(), response.length(), 0);
-
-			response = "003 :This server was created 2022.3.18\n";
-			send(iter->getSocket(), response.c_str(), response.length(), 0);
-
-			response = "004 :ft_irc 1 +i +i\n";
-			send(iter->getSocket(), response.c_str(), response.length(), 0);
-
-			response = "Mode yecnam +i\n";
-			send(iter->getSocket(), response.c_str(), response.length(), 0);
-		}
-	}
-
-	// 사용자 추가
-	void addUser(int clientSocket)
-	{
-		User user(clientSocket);
-		users.push_back(user);
-	}
-
-	// 사용자 제거
-	void removeUser(int clientSocket)
-	{
-		users.erase(std::remove_if(users.begin(), users.end(),
-								   [clientSocket](const User &user)
-								   {
-									   return user.getSocket() == clientSocket;
-								   }),
-					users.end());
-
-		// 채널에서도 해당 사용자 제거
-		for (Channel &channel : channels)
-		{
-			channel.removeUser(clientSocket);
-		}
-	}
-
-	// 채널 추가
-	void addChannel(const std::string &channelName)
-	{
-		Channel channel(channelName);
-		channels.push_back(channel);
-	}
-
-	// 채널 제거
-	void removeChannel(const std::string &channelName)
-	{
-		channels.erase(std::remove_if(channels.begin(), channels.end(),
-									  [channelName](const Channel &channel)
-									  {
-										  return channel.getName() == channelName;
-									  }),
-					   channels.end());
-	}
-
-	// 사용자가 채널에 가입
-	void joinChannel(int clientSocket, const std::string &channelName)
-	{
-		for (Channel &channel : channels)
-		{
-			if (channel.getName() == channelName)
-			{
-				channel.addUser(getUserBySocket(clientSocket));
-				break;
-			}
-		}
-	}
-
-	// 사용자가 채널에서 나가기
-	void leaveChannel(int clientSocket, const std::string &channelName)
-	{
-		for (Channel &channel : channels)
-		{
-			if (channel.getName() == channelName)
-			{
-				channel.removeUser(clientSocket);
-				break;
-			}
-		}
-	}
-
-	// 소켓을 통해 사용자 찾기
-	User getUserBySocket(int socket)
-	{
-		for (const User &user : users)
-		{
-			if (user.getSocket() == socket)
-			{
-				return user;
-			}
-		}
-		throw std::runtime_error("User not found");
-	}
-
-	void handleClient(int clientSocket)
-	{
-		struct pollfd tmp;
-
-		tmp.fd = clientSocket;
-		tmp.events = POLLIN;
-
-		pollfds.push_back(tmp);
-
-		User newUser(clientSocket);
-		users.push_back(newUser);
-
-		std::cout << clientSocket << " : Client connected." << std::endl;
-	}
-
-public:
-	IRCServer()
-	{
-		// 서버 초기화
-		serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-		if (serverSocket == -1)
-		{
-			std::cerr << "Error: Unable to create server socket." << std::endl;
-			exit(1);
-		}
-
-		// 서버 주소 설정
-		serverAddress.sin_family = AF_INET;
-		serverAddress.sin_port = htons(SERVER_PORT);
-		serverAddress.sin_addr.s_addr = INADDR_ANY;
-
-		// 서버 바인딩
-		if (bind(serverSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) == -1)
-		{
-			std::cerr << "Error: Binding failed." << std::endl;
-			exit(1);
-		}
-
-		// 서버 리스닝
-		if (listen(serverSocket, MAX_CONNECTIONS) == -1)
-		{
-			std::cerr << "Error: Listening failed." << std::endl;
-			exit(1);
-		}
-
-		struct pollfd tmp;
-		tmp.fd = serverSocket;
-		tmp.events = POLLIN;
-
-		pollfds.push_back(tmp);
-
-		std::cout << "IRC Server started on port " << SERVER_PORT << std::endl;
-	}
-
-	void acceptConnections()
-	{
-		int clientLen = sizeof(clientAddr);
-		int clientSocket;
-		int pollResult;
-		std::vector<User>::iterator iterUser;
-		std::vector<struct pollfd>::iterator iter;
-
-		while (true)
-		{
-			pollResult = poll(&pollfds[0], pollfds.size(), 0);
-			if (pollResult == -1)
-			{
-				// 오류 처리
-				std::cerr << "Error in poll." << std::endl;
-				break;
-			}
-			else if (pollResult == 0)
-			{
-				// 타임아웃 처리
-				continue;
-			}
-
-			if (pollfds[0].revents & POLLIN)
-			{
-				clientSocket = accept(serverSocket, (struct sockaddr *)&clientAddr, (socklen_t *)&clientLen);
-				if (clientSocket == -1)
-				{
-					std::cerr << "Error: Unable to accept client connection." << std::endl;
-					continue;
-				}
-				handleClient(clientSocket);
-			}
-
-			for (iter = pollfds.begin() + 1, iterUser = users.begin(); (iter != pollfds.end()) && (iterUser != users.end()); iter++, iterUser++)
-			{
-				if (iter->fd > 0 && iter->revents & POLLIN)
-				{
-					ssize_t bytesRead = recv(iter->fd, buffer, sizeof(buffer), 0);
-					if (bytesRead <= 0)
-					{
-						std::cout << iter->fd << ": Client disconnected." << std::endl;
-						close(iter->fd);
-						pollfds.erase(iter);
-						users.erase(iterUser);
-						break;
-					}
-
-					// 수신한 데이터를 문자열로 변환
-					std::string receivedMessage(buffer, bytesRead);
-					std::string oneMsg;
-					std::stringstream ss(receivedMessage);
-					std::string command;
-					std::cout << iter->fd << " client Received message: " << receivedMessage << std::endl;
-
-					while (std::getline(ss, oneMsg))
-					{
-						command = oneMsg.substr(0, oneMsg.find(" "));
-						std::cout << "command : " << command << std::endl;
-
-						if (!iterUser->isRegistered)
-						{
-							beforeRegisterdMsg(command, oneMsg, iterUser);
-						}
-						else
-						{
-							if (command == "PING")
-							{
-								// std::string response = "PONG " + iterUser->getnickname();
-                                std::string response = "PONG localhost\n";
-								send(clientSocket, response.c_str(), response.length(), 0);
-							}
-							if (command == "HI\n")
-							{
-								std::string response = "Hello, Client!\n";
-								send(clientSocket, response.c_str(), response.length(), 0);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-};
-
-int main()
-{
-	IRCServer server;
 	server.acceptConnections();
 	return 0;
 }
