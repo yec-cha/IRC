@@ -1,5 +1,39 @@
 #include "Channel.hpp"
 
+Channel::Channel() {}
+
+Channel::Channel(const std::string &name, User &user)
+: name_(name), invite_(false), key_(false), topic_(false)
+{
+	this->users_.insert(std::pair<int, std::pair<int, User &> >(user.getSocket(), std::pair<int, User &>(1, user)));
+	welcomeChannel(user);
+}
+
+Channel::Channel(const Channel &channel)
+: name_(channel.name_), invite_(false), key_(false), topic_(false)
+{
+	*this = channel;
+}
+
+Channel& Channel::operator=(const Channel &channel)
+{
+	if (this != &channel)
+	{
+		this->users_ = channel.users_;
+		this->invitedUser = channel.invitedUser;
+		this->name_ = channel.name_;
+		this->topicStr_ = channel.topicStr_;
+		this->password_ = channel.password_;
+		this->invite_ = channel.invite_;
+		this->key_ = channel.key_;
+		this->topic_ = channel.topic_;
+		this->userLimit_ = channel.userLimit_;
+	}
+	return *this;
+}
+
+Channel::~Channel() {}
+
 void Channel::addInvitedUser(const std::string &name)
 {
 	invitedUser.push_back(name);
@@ -19,7 +53,7 @@ int Channel::getLimit() const
 {
 	return userLimit_;
 }
-	// bool getTopic
+
 bool Channel::getInviteBool() const
 {
 	return invite_;
@@ -49,9 +83,7 @@ void Channel::send_(int socket, const std::string &buffer, int flags)
 void Channel::sendAll_(const std::string &buffer, int flags)
 {
 	for (std::map<int, std::pair<int, User &> >::const_iterator iter = users_.begin(); iter != this->users_.end(); ++iter)
-	{
 		send_(iter->first, buffer, flags);
-	}
 }
 
 void Channel::sendPrivMsg_(const std::string &buffer, int socket, int flags)
@@ -59,9 +91,7 @@ void Channel::sendPrivMsg_(const std::string &buffer, int socket, int flags)
 	for (std::map<int, std::pair<int, User &> >::iterator iter = this->users_.begin(); iter != this->users_.end(); ++iter)
 	{
 		if (socket != iter->first)
-		{
 			this->send_(iter->first, buffer, flags);
-		}
 	}
 }
 
@@ -77,38 +107,6 @@ void Channel::sendChannelPRIVMSG(const std::vector<std::string> &parameters, std
 	}
 }
 
-std::string Channel::message_(const std::string &userNick, const std::string &ip, const std::string &command, const std::string &params)
-{
-	std::string prefix = userNick + "!" + userNick + "@" + ip;
-	std::string message = ":" + prefix + " " + command + " " + params + "\n";
-	// std::string message = ":" + prefix + " " + command + params + "\n";
-	return message;
-}
-
-std::string Channel::RPL_TOPIC(const std::string &client, const std::string &channel)
-{
-	std::string command = "332";
-	std::string result = ":" + command + client + channel + " :" + "\n";
-	// std::string result = ":" + command + client + channel + " :" + this->getTopic() + "\n";
-	return result;
-}
-
-std::string Channel::RPL_NAMREPLY(const std::string &client, const std::string &channel)
-{
-	std::string command = "353";
-	std::string symbol = "=";
-	std::string result = ":" + command + client + symbol + channel + " :" + "\n";
-	// std::string result = ":" + command + client + symbol + channel + " :" + clientList + "\n";
-	return result;
-}
-
-std::string Channel::RPL_ENDOFNAMES(const std::string &client, const std::string &channel)
-{
-	std::string command = "366";
-	std::string result = ":" + command + client + channel + ":End of /NAMES list\n";
-	return result;
-}
-
 void Channel::welcomeChannel(User &user)
 {
 	std::string JOIN = ":" + user.getNickName() + "!" + user.getNickName() + "@" + user.getHostName() + " " + "JOIN" + " " + this->name_ + "\n";
@@ -116,7 +114,6 @@ void Channel::welcomeChannel(User &user)
 
 	std::string TOPIC_command = "332";
 	std::string TOPIC = ":ft_IRC " + TOPIC_command + " " + user.getNickName() + " " + this->name_ + " :" + this->topicStr_ + "\n";
-	// std::string TOPIC = ": " + TOPIC_command + " " + user.getNickName() + " " + this->name_ + " :" + this->getTopic() + "\n";
 	this->send_(user.getSocket(), TOPIC, 0);
 
 	std::string NAMREPLY_command = "353";
@@ -135,24 +132,11 @@ void Channel::welcomeChannel(User &user)
 
 	NAMREPLY += "\n";
 	this->send_(user.getSocket(), NAMREPLY, 0);
-	// this->sendAll_(NAMREPLY, 0);
 
 	std::string ENDOFNAMES_command = "366";
 	std::string ENDOFNAMES = ":ft_IRC " + ENDOFNAMES_command + " " + user.getNickName() + " " + this->name_ + " :End of /NAMES list\n";
 	this->send_(user.getSocket(), ENDOFNAMES, 0);
-	// this->sendAll_(ENDOFNAMES, 0);
 }
-
-/*
-- i: Set/remove Invite-only channel
-	초대 전용 채널 설정/제거
-- t: Set/remove the restrictions of the TOPIC command to channel operators
-	채널에 대한 TOPIC 명령의 제한을 설정/제거
-- k: Set/remove the channel key (password)
-	채널 키(비밀번호) 설정/제거
-- o: Give/take channel operator privilege
-	채널 운영자 권한 부여/수여
-*/
 
 const std::string Channel::MODE(const std::vector<std::string> &parameters, std::deque<User>::iterator &iterUser)
 {
@@ -239,18 +223,13 @@ void Channel::keyMode(const std::vector<std::string> &parameters, std::deque<Use
 
 void Channel::operatorMode(const std::vector<std::string> &parameters, std::deque<User>::iterator &iterUser)
 {
-	// std::map<int, std::pair<int, User &> >::iterator iter = this->users_.find(iterUser->getSocket());
 	std::map<int, std::pair<int, User &> >::iterator iter = this->users_.begin();
 	for (; iter != this->users_.end(); ++iter) {
 		if (iter->second.second.getNickName() == parameters[2]) {
 			if (parameters[1].at(0) == '+')
-			{
 				iter->second.first = 1;
-			}
 			else if (parameters[1].at(0) == '-')
-			{
 				iter->second.first = 0;
-			}
 			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
 			this->sendAll_(this->NOTICE(parameters, iterUser), 0);
 			return ;
@@ -324,9 +303,7 @@ void Channel::mode(const std::vector<std::string> &parameters, std::deque<User>:
 					modeOp += parameters[i];
 			}
 			else
-			{
 				para += parameters[i] + " ";
-			}
 		}
 	}
 
@@ -414,18 +391,6 @@ void Channel::mode(const std::vector<std::string> &parameters, std::deque<User>:
 		}
 	}
 }
-
-Channel::Channel(const std::string &name, User &user) : name_(name)
-{
-	this->users_.insert(std::pair<int, std::pair<int, User &> >(user.getSocket(), std::pair<int, User &>(1, user)));
-	welcomeChannel(user);
-
-	this->invite_ = false;
-	this->key_ = false;
-	this->topic_ = false;
-}
-
-Channel::~Channel() {}
 
 void Channel::addUser(User &user)
 {

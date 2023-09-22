@@ -1,12 +1,11 @@
 #ifndef USER_HPP
-#define USER_HPP
+# define USER_HPP
 
-#include <string>
-#include <map>
-#include "color.hpp"
-#include <iostream>
+# include <string>
+# include <map>
+# include "color.hpp"
+# include <iostream>
 
-/* Parameters: <username> <hostname> <servername> <realname> */
 class User
 {
 private:
@@ -17,6 +16,7 @@ private:
 	std::string hostName_;
 	std::string serverName_;
 	std::string realName_;
+	std::string buffer;
 
 	bool isPassed;
 	bool hasNick;
@@ -25,6 +25,7 @@ private:
 	bool isEnd;
 
 	User();
+	
 
 public:
 	User(int socket);
@@ -38,6 +39,7 @@ public:
 	const std::string &getHostName() const;
 	const std::string &getServerName() const;
 	const std::string &getRealName() const;
+	const std::string &getBuffer() const;
 
 	bool getIsPassed() const;
 	bool getHasNick() const;
@@ -56,11 +58,7 @@ public:
 	void setHostName(const std::string &name);
 	void setServerName(const std::string &name);
 	void setRealName(const std::string &name);
-
-	void getMyState() const
-	{
-		std::cout << YELLOW << socket_ << " : " << nickName_ << " registerd ? " << isRegistered << " end ? " << isEnd << RESET << std::endl;
-	}
+	void setBuffer(const std::string &name);
 };
 
 #endif
