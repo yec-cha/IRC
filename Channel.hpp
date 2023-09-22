@@ -1,6 +1,7 @@
 #ifndef CHANNEL_HPP
 # define CHANNEL_HPP
 
+# include <cstdlib>
 # include <map>
 # include <iostream>
 # include <iterator>
@@ -9,6 +10,7 @@
 # include <vector>
 # include <deque>
 # include <sstream>
+# include <utility>
 
 # include "User.hpp"
 

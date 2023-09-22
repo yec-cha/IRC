@@ -12,17 +12,23 @@ int checkArguments(int argc, char** argv) {
     }
     int result = std::atoi(argv[1]);
     if (result == 0)
+	{
         return -1;
+	}
 	std::string pass(argv[2]);
 	if (pass.size() <= 0)
+	{
 		return -1;
+	}
     return result;
 }
 
 int main(int argc, char** argv) {
 	int port = checkArguments(argc, argv);
     if (port == -1)
+	{
         return 1;
+	}
     
 	Server server(port, argv[2]);
 

@@ -12,6 +12,8 @@
 # include <unistd.h>
 # include <poll.h>
 # include <deque>
+# include <cstdlib>
+# include <cstring>
 
 # include "User.hpp"
 # include "Channel.hpp"

@@ -97,7 +97,7 @@ void Server::acceptConnections()
 
 		for (iter = pollfds.begin() + 1, iterUser = users.begin(); (iter != pollfds.end()) && (iterUser != users.end()); iter++, iterUser++)
 		{
-			memset(buffer, 0, 532);
+			std::memset(buffer, 0, 532);
 			if (iter->fd > 0 && iter->revents & POLLIN)
 			{
 				ssize_t bytesRead = recv(iter->fd, buffer, sizeof(buffer), 0);
