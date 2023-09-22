@@ -22,7 +22,7 @@ class User;
 class Channel
 {
 private:
-	std::map<int, std::pair<int, User&> > users_;
+	std::map<int, std::pair<int, User*> > users_;
 	std::vector<std::string> invitedUser;
 	std::string name_;
 	std::string topicStr_;
