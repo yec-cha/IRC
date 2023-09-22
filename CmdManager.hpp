@@ -29,7 +29,6 @@ public:
 	void beforeRegisteredMsg(std::string &cmd, std::vector<std::string> const &parameters, std::deque<User>::iterator &iter);
 	void afterRegisteredMsg(std::string &cmd, std::vector<std::string> const &parameters, std::deque<User>::iterator &iter);
 	void exeCmd(std::string msg, std::deque<User>::iterator &user);
-
 	void cmd_NICK(std::vector<std::string> const &parameters, std::deque<User>::iterator &iter);
 	void cmd_TOPIC(std::vector<std::string> const &parameters, std::deque<User>::iterator &iter);
 	void cmd_USER(std::vector<std::string> const &parameters, std::deque<User>::iterator &iter);
@@ -39,7 +38,6 @@ public:
 	void cmd_MODE(std::vector<std::string> const &parameters, std::deque<User>::iterator &iterUser);
 	void cmd_INVITE(std::vector<std::string> const &parameters, std::deque<User>::iterator &iterUser);
 	void cmd_KICK(std::vector<std::string> const &parameters, std::deque<User>::iterator &iterUser);
-
 	void bot(const std::deque<Channel>::iterator &iter, const std::string &msg);
 };
 

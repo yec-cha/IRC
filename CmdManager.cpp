@@ -37,7 +37,7 @@ void CmdManager::exeCmd(std::string msg, std::deque<User>::iterator &user)
 		{
 			if (msg[i] == ':')
 			{
-				start++;
+				start += 1;
 				break;
 			}
 			if (msg[i] == ' ')
@@ -73,7 +73,7 @@ void CmdManager::cmd_JOIN(std::vector<std::string> const &parameters, std::deque
 	{
 		if (token.empty() == false)
 		{
-			if (token.at(0) != '#')
+			if (token.at(0) != '#' || token.size() < 2)
 				return Message::ERR_NOSUCHCHANNEL_403(iterUser->getSocket(), iterUser->getNickName(), token);
 			channelName.push_back(token);
 		}
@@ -275,6 +275,8 @@ void CmdManager::cmd_PRIVMSG(std::vector<std::string> const &parameters, std::de
 						break ;
 					}
 				}
+				if (iter == this->channels.end())
+					Message::ERR_NOSUCHNICK_401(iterUser->getSocket(), iterUser->getNickName(), target);
 			}
 			else
 			{
@@ -444,7 +446,7 @@ void CmdManager::beforeRegisteredMsg(std::string &cmd, const std::vector<std::st
 		sendClient(iter->getSocket(), "004 " + iter->getNickName() + " :ft_IRC " + VERSION + " +i +itkol\n");
 		sendClient(iter->getSocket(), "Mode " + iter->getNickName() + " +i\n");
 	}
-};
+}
 
 void CmdManager::afterRegisteredMsg(std::string &cmd, const std::vector<std::string> &parameters, std::deque<User>::iterator &iter)
 {
@@ -513,7 +515,7 @@ void CmdManager::bot(const std::deque<Channel>::iterator &iter, const std::strin
 	{
 		time_t timer;
 		struct tm* t;
-		timer = time(0); // 1970년 1월 1일 0시 0분 0초부터 시작하여 현재까지의 초
+		timer = time(0);
 		t = localtime(&timer); 
 		std::stringstream ss;
 
