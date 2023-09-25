@@ -18,7 +18,7 @@ Message::~Message() {}
 
 void Message::sendClient(int socket, const std::string &msg)
 {
-	send(socket, msg.c_str(), msg.length(), 0);
+	send(socket, msg.c_str(), msg.length(), MSG_DONTWAIT);
 	std::cout << "server (to " << socket << ") :" << RED << msg << RESET << std::endl;
 };
 

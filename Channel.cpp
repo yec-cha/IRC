@@ -102,7 +102,7 @@ void Channel::sendChannelPRIVMSG(const std::vector<std::string> &parameters, std
 		if (iterUser->getSocket() != iter->first)
 		{
 			std::string privmsg = ":" + iterUser->getNickName() + "!" + iterUser->getUserName() + "@" + iterUser->getHostName() + " " + "PRIVMSG " + parameters[0] + " :" + parameters[1] + "\n";
-			this->send_(iter->first, privmsg, 0);
+			this->send_(iter->first, privmsg, MSG_DONTWAIT);
 		}
 	}
 }
@@ -110,11 +110,11 @@ void Channel::sendChannelPRIVMSG(const std::vector<std::string> &parameters, std
 void Channel::welcomeChannel(User &user)
 {
 	std::string JOIN = ":" + user.getNickName() + "!" + user.getNickName() + "@" + user.getHostName() + " " + "JOIN" + " " + this->name_ + "\n";
-	this->sendAll_(JOIN, 0);
+	this->sendAll_(JOIN, MSG_DONTWAIT);
 
 	std::string TOPIC_command = "332";
 	std::string TOPIC = ":ft_IRC " + TOPIC_command + " " + user.getNickName() + " " + this->name_ + " :" + this->topicStr_ + "\n";
-	this->send_(user.getSocket(), TOPIC, 0);
+	this->send_(user.getSocket(), TOPIC, MSG_DONTWAIT);
 
 	std::string NAMREPLY_command = "353";
 	std::string NAMREPLY_symbol = "=";
@@ -131,11 +131,11 @@ void Channel::welcomeChannel(User &user)
 	}
 
 	NAMREPLY += "\n";
-	this->send_(user.getSocket(), NAMREPLY, 0);
+	this->send_(user.getSocket(), NAMREPLY, MSG_DONTWAIT);
 
 	std::string ENDOFNAMES_command = "366";
 	std::string ENDOFNAMES = ":ft_IRC " + ENDOFNAMES_command + " " + user.getNickName() + " " + this->name_ + " :End of /NAMES list\n";
-	this->send_(user.getSocket(), ENDOFNAMES, 0);
+	this->send_(user.getSocket(), ENDOFNAMES, MSG_DONTWAIT);
 }
 
 const std::string Channel::MODE(const std::vector<std::string> &parameters, std::deque<User>::iterator &iterUser)
@@ -161,8 +161,8 @@ void Channel::inviteMode(const std::vector<std::string> &parameters, std::deque<
 		if (this->invite_ == false)
 		{
 			this->invite_ = true;
-			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
-			this->sendAll_(this->NOTICE(parameters, iterUser), 0);
+			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), MSG_DONTWAIT);
+			this->sendAll_(this->NOTICE(parameters, iterUser), MSG_DONTWAIT);
 		}
 	}
 	else if (parameters[1].at(0) == '-')
@@ -170,8 +170,8 @@ void Channel::inviteMode(const std::vector<std::string> &parameters, std::deque<
 		if (this->invite_ == true)
 		{
 			this->invite_ = false;
-			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
-			this->sendAll_(this->NOTICE(parameters, iterUser), 0);
+			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), MSG_DONTWAIT);
+			this->sendAll_(this->NOTICE(parameters, iterUser), MSG_DONTWAIT);
 		}
 	}
 }
@@ -183,8 +183,8 @@ void Channel::topicMode(const std::vector<std::string> &parameters, std::deque<U
 		if (this->topic_ == false)
 		{
 			this->topic_ = true;
-			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
-			this->sendAll_(this->NOTICE(parameters, iterUser), 0);
+			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), MSG_DONTWAIT);
+			this->sendAll_(this->NOTICE(parameters, iterUser), MSG_DONTWAIT);
 		}
 	}
 	else if (parameters[1].at(0) == '-')
@@ -192,8 +192,8 @@ void Channel::topicMode(const std::vector<std::string> &parameters, std::deque<U
 		if (this->topic_ == true)
 		{
 			this->topic_ = false;
-			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
-			this->sendAll_(this->NOTICE(parameters, iterUser), 0);
+			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), MSG_DONTWAIT);
+			this->sendAll_(this->NOTICE(parameters, iterUser), MSG_DONTWAIT);
 		}
 	}
 }
@@ -206,8 +206,8 @@ void Channel::keyMode(const std::vector<std::string> &parameters, std::deque<Use
 		{
 			this->key_ = true;
 			this->password_ = parameters[2];
-			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
-			this->sendAll_(this->NOTICE(parameters, iterUser), 0);
+			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), MSG_DONTWAIT);
+			this->sendAll_(this->NOTICE(parameters, iterUser), MSG_DONTWAIT);
 		}
 	}
 	else if (parameters[1].at(0) == '-')
@@ -215,8 +215,8 @@ void Channel::keyMode(const std::vector<std::string> &parameters, std::deque<Use
 		if (this->key_ == true)
 		{
 			this->key_ = false;
-			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
-			this->sendAll_(this->NOTICE(parameters, iterUser), 0);
+			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), MSG_DONTWAIT);
+			this->sendAll_(this->NOTICE(parameters, iterUser), MSG_DONTWAIT);
 		}
 	}
 }
@@ -230,8 +230,8 @@ void Channel::operatorMode(const std::vector<std::string> &parameters, std::dequ
 				iter->second.first = 1;
 			else if (parameters[1].at(0) == '-')
 				iter->second.first = 0;
-			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
-			this->sendAll_(this->NOTICE(parameters, iterUser), 0);
+			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), MSG_DONTWAIT);
+			this->sendAll_(this->NOTICE(parameters, iterUser), MSG_DONTWAIT);
 			return ;
 		}
 	}
@@ -245,8 +245,8 @@ void Channel::userLimitMode(const std::vector<std::string> &parameters, std::deq
 		if (value > 0)
 		{
 			this->userLimit_ = value;
-			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
-			this->sendAll_(this->NOTICE(parameters, iterUser), 0);
+			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), MSG_DONTWAIT);
+			this->sendAll_(this->NOTICE(parameters, iterUser), MSG_DONTWAIT);
 		}
 	}
 	else if (parameters[1].at(0) == '-')
@@ -254,8 +254,8 @@ void Channel::userLimitMode(const std::vector<std::string> &parameters, std::deq
 		if (this->userLimit_ != 0)
 		{
 			this->userLimit_ = 0;
-			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), 0);
-			this->sendAll_(this->NOTICE(parameters, iterUser), 0);
+			this->send_(iterUser->getSocket(), this->MODE(parameters, iterUser), MSG_DONTWAIT);
+			this->sendAll_(this->NOTICE(parameters, iterUser), MSG_DONTWAIT);
 		}
 	}
 }
@@ -433,7 +433,7 @@ void Channel::deleteUser(const int socket)
 	std::map<int, std::pair<int, User *> >::iterator iter = users_.find(socket);
 	if (iter != users_.end())
 	{
-		sendAll_(":" + iter->second.second->getNickName() + "!" + iter->second.second->getUserName() + "@" + iter->second.second->getHostName() + " PART " + name_ + "\n", 0);
+		sendAll_(":" + iter->second.second->getNickName() + "!" + iter->second.second->getUserName() + "@" + iter->second.second->getHostName() + " PART " + name_ + "\n", MSG_DONTWAIT);
 		users_.erase(users_.find(socket));
 	}
 }
