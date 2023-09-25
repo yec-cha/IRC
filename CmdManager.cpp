@@ -8,7 +8,7 @@ CmdManager::~CmdManager() {}
 
 void CmdManager::sendClient(int socket, const std::string msg)
 {
-	if (send(socket, msg.c_str(), msg.size(), 0) == -1)
+	if (send(socket, msg.c_str(), msg.size(), MSG_DONTWAIT) == -1)
 	{
 		std::cout << BOLDRED << "Send message failed" << RESET << std::endl;
 		return;
@@ -408,7 +408,7 @@ void CmdManager::cmd_TOPIC(const std::vector<std::string> &parameters, std::dequ
 						if (itChannel->isOperator(*iter))
 						{
 							itChannel->setTopic(parameters[1]);
-							itChannel->sendAll_(":" + iter->getNickName() + " TOPIC " + itChannel->getName() + " " + parameters[1] + "\n", 0);
+							itChannel->sendAll_(":" + iter->getNickName() + " TOPIC " + itChannel->getName() + " " + parameters[1] + "\n", MSG_DONTWAIT);
 						}
 						else
 							Message::ERR_CHANOPRIVSNEEDED_482(iter->getSocket(), iter->getNickName(), itChannel->getName());
@@ -416,7 +416,7 @@ void CmdManager::cmd_TOPIC(const std::vector<std::string> &parameters, std::dequ
 					else
 					{
 						itChannel->setTopic(parameters[1]);
-						itChannel->sendAll_(":" + iter->getNickName() + " TOPIC " + itChannel->getName() + " " + parameters[1] + "\n", 0);
+						itChannel->sendAll_(":" + iter->getNickName() + " TOPIC " + itChannel->getName() + " " + parameters[1] + "\n", MSG_DONTWAIT);
 					}
 				}
 				else
